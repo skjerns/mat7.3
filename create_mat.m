@@ -1,19 +1,27 @@
 data = struct
-data.int16 = int16(16)
-data.bool = boolean(0)
-data.single = single(0.1)
-data.double = double(0.1)
-data.char = char('x')
+data.int8_ = int8(2)
+data.uint8_ = uint8(2)
+data.uint16_ = uint16(12)
+data.int16_ = int16(16)
+data.int32_ = int32(1115)
+data.uint32_ = uint32(5452)
+data.int64_ = int64(65243)
+data.uint64_= uint64(32563) 
+data.bool_ = boolean(0)
+data.single_ = single(0.1)
+data.double_ = double(0.1)
+data.char_ = char('x')
 data.arr_bool = boolean([1,1,0])
 data.arr_float = single([1.1,1.2,0.3;2,3,4])
 data.arr_double = double([1.1,1.2,0.3])
 data.arr_char = char('test')
 data.arr_nan = [NaN,NaN]
-data.ab = {'third', 'fourth'}
-data.aa = {'first', 'second'}
-data.nan = NaN
-data.complex = complex(2)
-data.cell_char = {'Smith','Chung','Morales'; 'Sanchez','Peterson','Adams'}
-data.cell = {double([1.1,2.2]), boolean(0), boolean([0,1]),1.1,0,'test', {'subcell', 0}}
+data.nan_ = NaN
+data.complex_ = complex(2, 3)
+data.cell_char_ = {'Smith','Chung','Morales'; 'Sanchez','Peterson','Adams'}
+data.cell_ = {double([1.1,2.2]), boolean(0), boolean([0,1]),1.1,0,'test', {'subcell', 0}}
+data.string_ = 'tasdfasdf'
+secondvar = [1,2,3,4]
 
-save('data.mat', 'data','-v7.3')
+
+save('data.mat','-v7.3')
