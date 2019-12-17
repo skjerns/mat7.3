@@ -7,14 +7,6 @@ Created on Thu Dec 12 12:20:29 2019
 import os
 import numpy as np
 import h5py
-import datetime
-fname = 'C:/Users/Simon/dropbox/nt1-hrv-share/A9318_hrv.mat'
-
-# scipy.io.loadmat(fname)
-
-#TODO: Add attrs?
-a=[]
-
 
 class HDF5Decoder():
     def __init__(self):
@@ -22,7 +14,7 @@ class HDF5Decoder():
         self.d = {}
         self.refs = {} # this is used in case of matlab matrices
 
-    def hdf52dict(self, hdf5):
+    def mat2dict(self, hdf5):
         if '#refs#' in hdf5: 
             self.refs = hdf5['#refs#']
         d = {}
@@ -33,14 +25,15 @@ class HDF5Decoder():
             if ext=='.mat':
                 d[var] = self.unpack_mat(hdf5[var])
             elif ext=='.h5' or ext=='.hdf5':
-                d[var] = self.unpack_mat(hdf5[var])
+                err = 'Can only load .mat. Please use package hdfdict instead'\
+                      '\npip install hdfdict\n' \
+                      'https://github.com/SiggiGue/hdfdict'
+                raise NotImplementedError(err)
             else:
                 raise ValueError('can only unpack .h5, .hdf5 or .mat')
         return d
     
-    def unpack_hdf5(self, hdf5, depth=0):
-        pass
-    
+   
     def unpack_mat(self, hdf5, depth=0):
         if depth==99:raise Exception
         if isinstance(hdf5, (h5py._hl.group.Group)):
@@ -57,7 +50,7 @@ class HDF5Decoder():
     def convert_mat(self, dataset):
         
         # all MATLAB variables have the attribute MATLAB_class
-        # if this is not present, it is not convertable
+        # if this is not present, it is not convertible
         if not 'MATLAB_class' in dataset.attrs:
             print(str(dataset), 'is not a matlab type')
             return None
@@ -71,10 +64,6 @@ class HDF5Decoder():
                     entry = self.unpack_mat(self.refs.get(r))
                     cell.append(entry)
             return cell
-        elif mtype=='embedded.fi':
-            print("ERROR: {} (fixed point) can't be loaded".format(dataset.name))
-            self.x.append(dataset)
-            return 'fixed point'
         elif mtype=='char': 
             return ''.join([chr(x) for x in dataset])
         elif mtype=='bool':
@@ -99,19 +88,15 @@ class HDF5Decoder():
         else:
             print('data type not supported: {}, {}'.format(mtype, dataset.dtype))
             
-def load_hdf5(filename):
+def loadmat(filename):
     decoder = HDF5Decoder()
-    with h5py.File(filename, 'r') as hdf5:
-        dictionary = decoder.hdf52dict(hdf5)
-    return dictionary
-    
-fname = 'data.mat'
-fname = 'hdf.h5'
+    try:
+        with h5py.File(filename, 'r') as hdf5:
+            dictionary = decoder.mat2dict(hdf5)
+        return dictionary
+    except OSError:
+        raise TypeError('Not a MATLAB 7.3 file. '\
+                        'Load with scipy.io.loadmat() instead.')
 
-hdf5 = h5py.File(fname, 'r') 
     
-self = HDF5Decoder()
-data = self.hdf52dict(hdf5)
-x = self.x
-d = self.d
         

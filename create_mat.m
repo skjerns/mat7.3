@@ -21,6 +21,7 @@ data.complex_ = complex(2, 3)
 data.cell_char_ = {'Smith','Chung','Morales'; 'Sanchez','Peterson','Adams'}
 data.cell_ = {double([1.1,2.2]), boolean(0), boolean([0,1]),1.1,0,'test', {'subcell', 0}}
 data.string_ = 'tasdfasdf'
+data.struct_ = struct('test', ['123', 1,2,3])
 secondvar = [1,2,3,4]
 
 
