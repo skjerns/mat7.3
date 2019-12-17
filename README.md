@@ -1,4 +1,4 @@
-# mat7.3
+# mat 7.3
 Load MATLAB 7.3 .mat files into Python.
 
 Starting with MATLAB 7.3, `.mat` files have been changed to store as custom `hdf5` files.
