@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     
 setuptools.setup(
      name='mat73',  
-     version='0.3',
+     version='0.32',
      scripts=['__init__.py', 'create_mat.m'] ,
      author="skjerns",
      author_email="nomail@nomail.com",
@@ -12,9 +12,9 @@ setuptools.setup(
      long_description=long_description,
    long_description_content_type="text/markdown",
      url="https://github.com/skjerns/mat7.3",
-     download_url="https://github.com/skjerns/mat7.3/archive/v0.3.tar.gz",
+     download_url="https://github.com/skjerns/mat7.3/archive/v0.31.tar.gz",
      install_requires=['h5py', 'numpy'],
-     packages=setuptools.find_packages(),
+     packages=['mat73'],
      classifiers=[
          "Programming Language :: Python :: 3",
          "License :: OSI Approved :: MIT License",

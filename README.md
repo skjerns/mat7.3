@@ -12,7 +12,7 @@ NotImplementedError: Please use HDF reader for matlab v7.3 files
 
 This library loads MATLAB 7.3 HDF5 files into a Python dictionary.
 
-```
+```Python
 import mat73
 data_dict = mat73.loadmat('data.mat')
 ```
