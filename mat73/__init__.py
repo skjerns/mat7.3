@@ -2,6 +2,8 @@
 """
 Created on Thu Dec 12 12:20:29 2019
 
+Load MATLAB 7.3 files into Python
+
 @author: Simon
 """
 import os
@@ -9,9 +11,8 @@ import numpy as np
 import h5py
 
 class HDF5Decoder():
-    def __init__(self):
-        self.x = []
-        self.d = {}
+    def __init__(self, verbose=True):
+        self.verbose = verbose
         self.refs = {} # this is used in case of matlab matrices
 
     def mat2dict(self, hdf5):
@@ -35,6 +36,12 @@ class HDF5Decoder():
     
    
     def unpack_mat(self, hdf5, depth=0):
+        """
+        unpack a h5py entry: if it's a group expand,
+        if it's a dataset convert
+        
+        for safety reasons, the depth cannot be larger than 99
+        """
         if depth==99:raise Exception
         if isinstance(hdf5, (h5py._hl.group.Group)):
             d = {}
@@ -48,11 +55,15 @@ class HDF5Decoder():
             return self.convert_mat(hdf5)
 
     def convert_mat(self, dataset):
-        
+        """
+        Converts h5py.dataset into python native datatypes
+        according to the matlab class annotation
+        """
         # all MATLAB variables have the attribute MATLAB_class
         # if this is not present, it is not convertible
         if not 'MATLAB_class' in dataset.attrs:
-            print(str(dataset), 'is not a matlab type')
+            if verbose:
+                print(str(dataset), 'is not a matlab type')
             return None
         
         mtype = dataset.attrs['MATLAB_class'].decode()
@@ -81,14 +92,21 @@ class HDF5Decoder():
         elif mtype in ('double', 'single', 'int8', 'int16', 'int32', 'int64', 
                        'uint8', 'uint16', 'uint32', 'uint64'): 
             arr = np.array(dataset, dtype=dataset.dtype)
-            self.d[dataset.dtype] = dataset
             # if size is 1, we usually have a single value, not an array
             if arr.size==1: arr=arr.squeeze()
             return arr
         else:
+            if not self.verbose: return
             print('data type not supported: {}, {}'.format(mtype, dataset.dtype))
             
 def loadmat(filename):
+    """
+    Loads a MATLAB 7.3 .mat file, which is actually a
+    HDF5 file with some custom matlab annotations inside
+    
+    :param filename: A string pointing to the file
+    :returns: A dictionary with the matlab variables loaded
+    """
     decoder = HDF5Decoder()
     try:
         with h5py.File(filename, 'r') as hdf5:
