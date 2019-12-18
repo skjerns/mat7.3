@@ -99,7 +99,7 @@ class HDF5Decoder():
             if not self.verbose: return
             print('data type not supported: {}, {}'.format(mtype, dataset.dtype))
             
-def loadmat(filename):
+def loadmat(filename, verbose=True):
     """
     Loads a MATLAB 7.3 .mat file, which is actually a
     HDF5 file with some custom matlab annotations inside
@@ -107,7 +107,7 @@ def loadmat(filename):
     :param filename: A string pointing to the file
     :returns: A dictionary with the matlab variables loaded
     """
-    decoder = HDF5Decoder()
+    decoder = HDF5Decoder(verbose=verbose)
     try:
         with h5py.File(filename, 'r') as hdf5:
             dictionary = decoder.mat2dict(hdf5)
