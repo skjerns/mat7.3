@@ -13,6 +13,7 @@ import h5py
 class HDF5Decoder():
     def __init__(self, verbose=True):
         self.verbose = verbose
+        self.d = {}
         self.refs = {} # this is used in case of matlab matrices
 
     def mat2dict(self, hdf5):
@@ -62,7 +63,7 @@ class HDF5Decoder():
         # all MATLAB variables have the attribute MATLAB_class
         # if this is not present, it is not convertible
         if not 'MATLAB_class' in dataset.attrs:
-            if verbose:
+            if self.verbose:
                 print(str(dataset), 'is not a matlab type')
             return None
         
