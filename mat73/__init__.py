@@ -23,7 +23,7 @@ class HDF5Decoder():
         for var in hdf5:
             if var in ['#refs#','#subsystem#']:
                 continue
-            ext = os.path.splitext(hdf5.filename)[1]
+            ext = os.path.splitext(hdf5.filename)[1].lower()
             if ext=='.mat':
                 d[var] = self.unpack_mat(hdf5[var])
             elif ext=='.h5' or ext=='.hdf5':
