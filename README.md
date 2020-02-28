@@ -36,4 +36,4 @@ pip install git+https://github.com/skjerns/mat7.3
 - This library will __only__ load mat 7.3 files. For older versions use `scipy.io.loadmat`
 - `cell` objects are loaded as lists. That means they lose their structure and and need to be sorted manually
 - Proprietary MATLAB types (e.g `datetime`, `duriation`, etc) are not supported. If someone tells me how to convert them, I'll implement that
-- For now, you can't save anything back to the .mat
+- For now, you can't save anything back to the .mat. Let me know if you need this functionality, would be quick to implement.
