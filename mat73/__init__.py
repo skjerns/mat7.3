@@ -114,8 +114,13 @@ def loadmat(filename, verbose=True):
             dictionary = decoder.mat2dict(hdf5)
         return dictionary
     except OSError:
-        raise TypeError('Not a MATLAB 7.3 file. '\
-                        'Load with scipy.io.loadmat() instead.')
+        raise TypeError('{} is not a MATLAB 7.3 file. '\
+                        'Load with scipy.io.loadmat() instead.'.format(filename))
+            
+            
+def savemat(filename, verbose=True):
+    
+    raise NotImplementedError
 
     
         
