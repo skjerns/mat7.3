@@ -37,3 +37,4 @@ pip install git+https://github.com/skjerns/mat7.3
 - `cell` objects are loaded as lists. That means they lose their structure and and need to be sorted manually
 - Proprietary MATLAB types (e.g `datetime`, `duriation`, etc) are not supported. If someone tells me how to convert them, I'll implement that
 - For now, you can't save anything back to the .mat. Let me know if you need this functionality, would be quick to implement.
+- See also [hdf5storage](https://github.com/frejanordsiek/hdf5storage)
