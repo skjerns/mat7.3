@@ -10,6 +10,16 @@ import os
 import numpy as np
 import h5py
 
+class AttrDict(dict):
+    """
+    We use AttributeDicts to simulate structs.
+    this way we simulate the accessing via 'struct.variable.subvariable'
+    """
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
+
+
 class HDF5Decoder():
     def __init__(self, verbose=True):
         self.verbose = verbose
@@ -32,7 +42,7 @@ class HDF5Decoder():
                       'https://github.com/SiggiGue/hdfdict'
                 raise NotImplementedError(err)
             else:
-                raise ValueError('can only unpack .h5, .hdf5 or .mat')
+                raise ValueError('can only unpack .mat')
         return d
     
    
@@ -45,29 +55,38 @@ class HDF5Decoder():
         """
         if depth==99:raise Exception
         if isinstance(hdf5, (h5py._hl.group.Group)):
-            d = {}
+            d = AttrDict()
             for key in hdf5:
                 elem   = hdf5[key]
                 self.d[key] = hdf5
                 d[key] = self.unpack_mat(elem, depth=depth+1)
             return d
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
-            
             return self.convert_mat(hdf5)
+
+    def _has_refs(self, dataset):
+        if len(dataset)==0: return False
+        if not isinstance(dataset[0], np.ndarray): return False
+        if isinstance(dataset[0][0], h5py.h5r.Reference):  
+            return True
+        return False
+
 
     def convert_mat(self, dataset):
         """
         Converts h5py.dataset into python native datatypes
         according to the matlab class annotation
-        """
+        """      
         # all MATLAB variables have the attribute MATLAB_class
         # if this is not present, it is not convertible
-        if not 'MATLAB_class' in dataset.attrs:
+        if not 'MATLAB_class' in dataset.attrs and not self._has_refs(dataset):
             if self.verbose:
                 print(str(dataset), 'is not a matlab type')
             return None
-        
-        mtype = dataset.attrs['MATLAB_class'].decode()
+        if self._has_refs(dataset):
+            mtype='cell'
+        else:
+            mtype = dataset.attrs['MATLAB_class'].decode()
        
         if mtype=='cell':
             cell = []
@@ -77,28 +96,28 @@ class HDF5Decoder():
                     cell.append(entry)
             return cell
         elif mtype=='char': 
-            return ''.join([chr(x) for x in dataset])
+            return ''.join([chr(x) for x in dataset]).replace('\x00', '')
         elif mtype=='bool':
             return bool(dataset)
         elif mtype=='logical': 
-            arr = np.array(dataset, dtype=bool)
+            arr = np.array(dataset, dtype=bool).T.squeeze()
             if arr.size==1: arr=bool(arr)
             return arr
         elif mtype=='canonical empty': 
             return None
         # complex numbers need to be filtered out separately
         elif 'imag' in str(dataset.dtype):
-            return np.array(dataset, np.complex)
+            return np.array(dataset, np.complex).T.squeeze()
         # if it is none of the above, we can convert to numpy array
         elif mtype in ('double', 'single', 'int8', 'int16', 'int32', 'int64', 
                        'uint8', 'uint16', 'uint32', 'uint64'): 
             arr = np.array(dataset, dtype=dataset.dtype)
-            # if size is 1, we usually have a single value, not an array
-            if arr.size==1: arr=arr.squeeze()
-            return arr
+            return arr.T.squeeze()
         else:
-            if not self.verbose: return
-            print('data type not supported: {}, {}'.format(mtype, dataset.dtype))
+            if self.verbose: 
+                print('data type not supported: {}, {}'.format(mtype, dataset.dtype))
+            return None
+        
             
 def loadmat(filename, verbose=True):
     """
@@ -108,6 +127,7 @@ def loadmat(filename, verbose=True):
     :param filename: A string pointing to the file
     :returns: A dictionary with the matlab variables loaded
     """
+    assert os.path.isfile(filename), '{} does not exist'.format(filename)
     decoder = HDF5Decoder(verbose=verbose)
     try:
         with h5py.File(filename, 'r') as hdf5:
@@ -119,7 +139,6 @@ def loadmat(filename, verbose=True):
             
             
 def savemat(filename, verbose=True):
-    
     raise NotImplementedError
 
     
