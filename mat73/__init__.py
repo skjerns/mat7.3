@@ -64,6 +64,7 @@ class HDF5Decoder():
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
             return self.convert_mat(hdf5)
 
+
     def _has_refs(self, dataset):
         if len(dataset)==0: return False
         if not isinstance(dataset[0], np.ndarray): return False
@@ -91,9 +92,13 @@ class HDF5Decoder():
         if mtype=='cell':
             cell = []
             for ref in dataset:
+                row = []
                 for r in ref:
                     entry = self.unpack_mat(self.refs.get(r))
-                    cell.append(entry)
+                    row.append(entry)
+                cell.append(row)
+            cell = list(map(list, zip(*cell))) # transpose cell
+            if len(cell)==1:cell = cell[0]
             return cell
         elif mtype=='char': 
             return ''.join([chr(x) for x in dataset]).replace('\x00', '')

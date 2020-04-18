@@ -37,9 +37,9 @@ class Testing(unittest.TestCase):
         np.testing.assert_array_equal(data['cell_'][5], 'test')
         np.testing.assert_array_equal(data['cell_'][6][0], 'subcell')
         np.testing.assert_array_equal(data['cell_'][6][1], 0)
-        np.testing.assert_array_equal(data['cell_char_'], ['Smith', 'Sanchez', 'Chung', 'Peterson', 'Morales', 'Adams'])
+        np.testing.assert_array_equal(data['cell_char_'], [['Smith', 'Chung', 'Morales'], ['Sanchez','Peterson','Adams']])
         assert data['char_']== 'x'
-        # np.testing.assert_array_equal(data['complex_'], np.array([2+3j]))
+        np.testing.assert_array_equal(data['complex_'], np.array([2+3j]))
         assert data['double_']==0.1
         assert data['double_'].dtype==np.float64
         assert data['int16_']==16
