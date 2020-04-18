@@ -26,15 +26,32 @@ To install, run:
 pip install mat73
 ```
 
-Alternatively:
+Alternatively for most recent version:
 ```
 pip install git+https://github.com/skjerns/mat7.3
 ```
 
+## Datatypes
+
+The following MATLAB datatypes can be loaded
+
+| MATLAB                   | Python            |
+|--------------------------|-------------------|
+| logical                  | np.bool_          |
+| single                   | np.float32        |
+| double                   | np.float64        |
+| int8/16/32/64            | np.int8/16/32/64  |
+| uint8/16/32/64           | np.uint8/16/32/64 |
+| complex                  | np.complex128     |
+| char                     | str               |
+| struct                   | dict              |
+| cell                     | list              |
+| canonical empty          | []                |
+| Other (ie Datetime, ...) | Not supported     |
+
 ## Short-comings
 
 - This library will __only__ load mat 7.3 files. For older versions use `scipy.io.loadmat`
-- `cell` objects are loaded as lists. That means they lose their structure and and need to be sorted manually
 - Proprietary MATLAB types (e.g `datetime`, `duriation`, etc) are not supported. If someone tells me how to convert them, I'll implement that
 - For now, you can't save anything back to the .mat. Let me know if you need this functionality, would be quick to implement.
-- See also [hdf5storage](https://github.com/frejanordsiek/hdf5storage)
+- See also [hdf5storage](https://github.com/frejanordsiek/hdf5storage), which can indeed be used for saving .mat, but has less features for loading
