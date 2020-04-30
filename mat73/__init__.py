@@ -112,7 +112,13 @@ class HDF5Decoder():
             return None
         # complex numbers need to be filtered out separately
         elif 'imag' in str(dataset.dtype):
-            return np.array(dataset, np.complex).T.squeeze()
+            if dataset.attrs['MATLAB_class']==b'single':
+                dtype = np.complex64 
+            else:
+                dtype = np.complex128
+            arr = np.array(dataset)
+            arr = (arr['real'] + arr['imag']*1j).astype(dtype)
+            return arr.T.squeeze()
         # if it is none of the above, we can convert to numpy array
         elif mtype in ('double', 'single', 'int8', 'int16', 'int32', 'int64', 
                        'uint8', 'uint16', 'uint32', 'uint64'): 

@@ -70,9 +70,21 @@ class Testing(unittest.TestCase):
         np.testing.assert_array_equal(data['struct_']['test'],[1,2,3,4])
         assert len(data['struct2_'])==3
         
-        
     def test_file2(self):
         d = mat73.loadmat('testfile2.mat')
+        raw1 = d['raw1']
+        assert raw1.label == ['']*5
+        assert raw1.speakerType == ['main']*5
+        np.testing.assert_array_equal(raw1.channel,[1,2,3,4,5])
+        np.testing.assert_allclose(raw1.measGain,[-1.0160217,-0.70729065,-1.2158508,0.68839645,2.464653])
+        for i in range(5):
+            assert np.isclose(np.sum(raw1.h[i]),-0.0007341067459898744)
+    
+        np.testing.assert_array_almost_equal(raw1.HSmooth[0][2], [ 0.001139-4.233492e-04j,  0.00068 +8.927040e-06j,
+        0.002382-7.647651e-04j, -0.012677+3.767829e-03j])
+        
+    def test_file3(self):
+        d = mat73.loadmat('testfile3.mat')
         raw1 = d['raw1']
         assert raw1.label == ['']*5
         assert raw1.speakerType == ['main']*5
