@@ -18,7 +18,7 @@ class Testing(unittest.TestCase):
         data = d['data']
         
         assert len(d)==2
-        assert len(data)==26
+        assert len(data)==27
         assert data.arr_two_three.shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -41,6 +41,8 @@ class Testing(unittest.TestCase):
         assert data['char_']== 'x'
         np.testing.assert_array_equal(data['complex_'], np.array([2+3j]))
         np.testing.assert_array_equal(data['complex2_'], np.array([123456789.123456789+987654321.987654321j]))
+        np.testing.assert_array_equal(data['complex3_'], np.array([8.909089035006170e-04 + 0.000000000000000e+00j]))
+
         assert data['double_']==0.1
         assert data['double_'].dtype==np.float64
         assert data['int16_']==16

@@ -23,6 +23,7 @@ data.arr_nan = [NaN,NaN]
 data.nan_ = NaN
 data.complex_ = complex(2, 3)
 data.complex2_ = complex(123456789.123456789, 987654321.987654321)
+data.complex3_ = complex(8.909089035006170e-04, 0.000000000000000e+00)
 data.cell_char_ = {'Smith','Chung','Morales'; 'Sanchez','Peterson','Adams'}
 data.cell_ = {double([1.1,2.2]), boolean(0), boolean([0,1]),1.1,0,'test', {'subcell', 0}}
 data.string_ = 'tasdfasdf'
