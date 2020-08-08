@@ -10,14 +10,6 @@ import os
 import numpy as np
 import h5py
 
-class AttrDict(dict):
-    """
-    We use AttributeDicts to simulate structs.
-    this way we simulate the accessing via 'struct.variable.subvariable'
-    """
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
 
 
 class HDF5Decoder():
@@ -55,7 +47,7 @@ class HDF5Decoder():
         """
         if depth==99:raise Exception
         if isinstance(hdf5, (h5py._hl.group.Group)):
-            d = AttrDict()
+            d = dict()
             for key in hdf5:
                 elem   = hdf5[key]
                 self.d[key] = hdf5
@@ -101,7 +93,10 @@ class HDF5Decoder():
             if len(cell)==1:cell = cell[0]
             return cell
         elif mtype=='char': 
-            return ''.join([chr(x) for x in dataset]).replace('\x00', '')
+            string_array = np.array(dataset).ravel()
+            string_array = ''.join([chr(x) for x in string_array])
+            string_array = string_array.replace('\x00', '')
+            return string_array
         elif mtype=='bool':
             return bool(dataset)
         elif mtype=='logical': 
