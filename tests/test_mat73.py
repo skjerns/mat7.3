@@ -4,6 +4,7 @@ Created on Fri Apr 17 18:03:26 2020
 
 @author: skjerns
 """
+import os
 import numpy as np
 import mat73
 import unittest
@@ -11,10 +12,17 @@ import unittest
 
 
 class Testing(unittest.TestCase):
-    
-    
+
+    def setUp(self):
+        for i in range(1,4):
+            file = 'testfile{}.mat'.format(i)
+            if not os.path.exists(file):
+                file = os.path.join('./tests', file)
+            self.__setattr__ ('testfile{}'.format(i), file)
+
+
     def test_file1(self):
-        d = mat73.loadmat('testfile1.mat')
+        d = mat73.loadmat(self.testfile1)
         data = d['data']
         
         assert len(d)==2
@@ -71,7 +79,7 @@ class Testing(unittest.TestCase):
         assert len(data['struct2_'])==3
         
     def test_file2(self):
-        d = mat73.loadmat('testfile2.mat')
+        d = mat73.loadmat(self.testfile2)
         raw1 = d['raw1']
         assert raw1['label'] == ['']*5
         assert raw1['speakerType'] == ['main']*5
@@ -84,7 +92,7 @@ class Testing(unittest.TestCase):
         0.002382-7.647651e-04j, -0.012677+3.767829e-03j])
         
     def test_file3(self):
-        d = mat73.loadmat('testfile3.mat')
+        d = mat73.loadmat(self.testfile3)
         raw1 = d['raw1']
         assert raw1['label'] == ['']*5
         assert raw1['speakerType'] == ['main']*5
