@@ -9,13 +9,12 @@ Load MATLAB 7.3 files into Python
 import os
 import numpy as np
 import h5py
-
+import logging
 
 
 class HDF5Decoder():
     def __init__(self, verbose=True):
         self.verbose = verbose
-        self.d = {}
         self.refs = {} # this is used in case of matlab matrices
 
     def mat2dict(self, hdf5):
@@ -74,7 +73,9 @@ class HDF5Decoder():
         # if this is not present, it is not convertible
         if not 'MATLAB_class' in dataset.attrs and not self._has_refs(dataset):
             if self.verbose:
-                print(str(dataset), 'is not a matlab type')
+                message = 'ERROR: not a MATLAB datatype: ' + \
+                          '{}, ({})'.format(dataset, dataset.dtype)
+                logging.error(message)
             return None
         if self._has_refs(dataset):
             mtype='cell'
@@ -120,8 +121,10 @@ class HDF5Decoder():
             arr = np.array(dataset, dtype=dataset.dtype)
             return arr.T.squeeze()
         else:
-            if self.verbose: 
-                print('data type not supported: {}, {}'.format(mtype, dataset.dtype))
+            if self.verbose:
+                message = 'ERROR: MATLAB type not supported: ' + \
+                          '{}, ({})'.format(mtype, dataset.dtype)
+                logging.error(message)
             return None
         
             
