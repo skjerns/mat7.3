@@ -11,9 +11,9 @@ setuptools.setup(
      long_description=long_description,
    long_description_content_type="text/markdown",
      url="https://github.com/skjerns/mat7.3",
-     download_url="https://github.com/skjerns/mat7.3/archive/v0.41.tar.gz",
+     download_url="https://github.com/skjerns/mat7.3/archive/v0.42.tar.gz",
      install_requires=['h5py', 'numpy'],
-     license='GNU 2.0',
+     license='MIT',
      packages=['mat73'],
      classifiers=[
          "Programming Language :: Python :: 3",
