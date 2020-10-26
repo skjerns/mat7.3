@@ -15,6 +15,7 @@ import logging
 class HDF5Decoder():
     def __init__(self, verbose=True):
         self.verbose = verbose
+        self.d = {}
         self.refs = {} # this is used in case of matlab matrices
 
     def mat2dict(self, hdf5):
