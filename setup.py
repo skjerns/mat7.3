@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     
 setuptools.setup(
      name='mat73',  
-     version='0.41',
+     version='0.42',
      author="skjerns",
      author_email="nomail@nomail.com",
      description="Load MATLAB .mat 7.3 into Python native data types",
