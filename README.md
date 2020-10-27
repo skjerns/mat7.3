@@ -1,3 +1,6 @@
+
+![Python package](https://github.com/skjerns/mat7.3/workflows/Python%20package/badge.svg)
+
 # mat 7.3
 Load MATLAB 7.3 .mat files into Python.
 
