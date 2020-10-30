@@ -56,8 +56,8 @@ The following MATLAB datatypes can be loaded
 | uint8/16/32/64           | np.uint8/16/32/64 |
 | complex                  | np.complex128     |
 | char                     | str               |
-| struct                   | dict              |
-| cell                     | list              |
+| struct                   | list of dicts     |
+| cell                     | list of lists     |
 | canonical empty          | []                |
 | Other (ie Datetime, ...) | Not supported     |
 
