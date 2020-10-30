@@ -1,5 +1,5 @@
 clear
-data = struct
+data = {}
 data.int8_ = int8(2)
 data.uint8_ = uint8(2)
 data.uint16_ = uint16(12)
@@ -29,7 +29,10 @@ data.cell_ = {double([1.1,2.2]), boolean(0), boolean([0,1]),1.1,0,'test', {'subc
 data.string_ = 'tasdfasdf'
 data.struct_ = struct('test', [1,2,3,4])
 data.struct2_ = struct('type',{'big','little'},'color','red','x',{single([1.1,1.2,0.3;2,3,4]), double([1.1,1.2,0.3])})
+data.structarr_ = struct('f1', {'some text'; [10,20,30]; magic(5)}, 'f2', {'v1'; 'v2'; 'v3';});
+
 secondvar = [1,2,3,4]
 
+keys = 'must_not_overwrite'
 
 save('testfile1.mat','-v7.3')

@@ -12,21 +12,41 @@ import h5py
 import logging
 
 
+
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+
+    def __getattr__(self, key):
+        """this prevents that built-in functions are overwritten"""
+        if key=='__getstate__':
+            raise AttributeError(key)
+        if key in dir(dict):
+            return dict.__getattr__(self, key)
+        else:
+            return self.__getitem__(key)
+
+    def __setattr__(self, key, value):
+        return self.__setitem__(key, value)
+
+
+
+
 class HDF5Decoder():
-    def __init__(self, verbose=True):
+    def __init__(self, verbose=True, use_attrdict=True):
         self.verbose = verbose
-        self.d = {}
+        self._dict_class = AttrDict if use_attrdict else dict
         self.refs = {} # this is used in case of matlab matrices
 
     def mat2dict(self, hdf5):
         if '#refs#' in hdf5: 
             self.refs = hdf5['#refs#']
-        d = {}
+        d = self._dict_class()
         for var in hdf5:
             if var in ['#refs#','#subsystem#']:
                 continue
             ext = os.path.splitext(hdf5.filename)[1].lower()
-            if ext=='.mat':
+            if ext.lower()=='.mat':
                 d[var] = self.unpack_mat(hdf5[var])
             elif ext=='.h5' or ext=='.hdf5':
                 err = 'Can only load .mat. Please use package hdfdict instead'\
@@ -45,13 +65,24 @@ class HDF5Decoder():
         
         for safety reasons, the depth cannot be larger than 99
         """
-        if depth==99:raise Exception
+        if depth==99:
+            raise RecursionError("Maximum number of 99 recursions reached.")
         if isinstance(hdf5, (h5py._hl.group.Group)):
-            d = dict()
+            d = self._dict_class()
             for key in hdf5:
+                matlab_class = hdf5[key].attrs.get('MATLAB_class')
                 elem   = hdf5[key]
-                self.d[key] = hdf5
-                d[key] = self.unpack_mat(elem, depth=depth+1)
+                unpacked = self.unpack_mat(elem, depth=depth+1)
+                if matlab_class==b'struct' and len(elem)>1:
+                    # convert struct to its proper form as in MATLAB
+                    # i.e. struct[0]['key'] will access the elements
+                    items = zip(*[v for v in unpacked.values()])
+                    keys = unpacked.keys()
+                    struct = [{k:v for v,k in zip(row, keys)} for row in items]
+                    struct = [self._dict_class(d) for d in struct]
+                    d[key] = struct
+                else:
+                    d[key] = unpacked
             return d
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
             return self.convert_mat(hdf5)
@@ -78,6 +109,7 @@ class HDF5Decoder():
                           '{}, ({})'.format(dataset, dataset.dtype)
                 logging.error(message)
             return None
+
         if self._has_refs(dataset):
             mtype='cell'
         else:
@@ -92,7 +124,8 @@ class HDF5Decoder():
                     row.append(entry)
                 cell.append(row)
             cell = list(map(list, zip(*cell))) # transpose cell
-            if len(cell)==1:cell = cell[0]
+            if len(cell)==1: # singular cells are interpreted as int/float
+                cell = cell[0]
             return cell
         elif mtype=='char': 
             string_array = np.array(dataset).ravel()
@@ -129,16 +162,21 @@ class HDF5Decoder():
             return None
         
             
-def loadmat(filename, verbose=True):
+def loadmat(filename, use_attrdict=True, verbose=True):
     """
     Loads a MATLAB 7.3 .mat file, which is actually a
     HDF5 file with some custom matlab annotations inside
     
     :param filename: A string pointing to the file
+    :param use_attrdict: make it possible to access structs like in MATLAB
+                         using struct.varname instead of struct['varname']
+                         WARNING: builtin dict functions cannot be overwritten,
+                         e.g. keys(), pop(), ...
+                         these will still be available by struct['keys']
     :returns: A dictionary with the matlab variables loaded
     """
     assert os.path.isfile(filename), '{} does not exist'.format(filename)
-    decoder = HDF5Decoder(verbose=verbose)
+    decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict)
     try:
         with h5py.File(filename, 'r') as hdf5:
             dictionary = decoder.mat2dict(hdf5)
@@ -152,4 +190,7 @@ def savemat(filename, verbose=True):
     raise NotImplementedError
 
     
-        
+if __name__=='__main__':
+    d = loadmat('../tests/testfile1.mat', use_attrdict=True)
+
+
