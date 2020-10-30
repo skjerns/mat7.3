@@ -17,7 +17,7 @@ This library loads MATLAB 7.3 HDF5 files into a Python dictionary.
 
 ```Python
 import mat73
-data_dict = mat73.loadmat('data.mat', use_attrdict=True)
+data_dict = mat73.loadmat('data.mat')
 ```
 
 As easy as that!
