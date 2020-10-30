@@ -1,5 +1,5 @@
 
-![Python package](https://github.com/skjerns/mat7.3/workflows/Python%20package/badge.svg) https://img.shields.io/pypi/v/mat73 ![pypi Version](https://img.shields.io/pypi/v/mat73)
+![Python package](https://github.com/skjerns/mat7.3/workflows/Python%20package/badge.svg)  ![pypi Version](https://img.shields.io/pypi/v/mat73)
 
 # mat 7.3
 Load MATLAB 7.3 .mat files into Python.
