@@ -76,13 +76,7 @@ class HDF5Decoder():
                 if matlab_class==b'struct' and len(elem)>1:
                     # convert struct to its proper form as in MATLAB
                     # i.e. struct[0]['key'] will access the elements
-                    items = []
-                    for item in unpacked.values():
-                        try:
-                            iter(item)
-                            items.append(item)
-                        except TypeError:
-                            items.append([item])
+                    items = zip(*[v for v in unpacked.values()])
                     keys = unpacked.keys()
                     struct = [{k:v for v,k in zip(row, keys)} for row in items]
                     struct = [self._dict_class(d) for d in struct]
