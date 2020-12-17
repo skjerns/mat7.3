@@ -86,7 +86,7 @@ class Testing(unittest.TestCase):
         assert data['structarr_'][2]['f2'] == ['v3']
         assert d['keys'] == 'must_not_overwrite'
 
-        with self.assertRaises(KeyError):
+        with self.assertRaises(AttributeError):
             d.structarr_
 
 
