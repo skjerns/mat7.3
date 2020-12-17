@@ -13,16 +13,19 @@ try:
     import pkg_resources
     version = pkg_resources.get_distribution('mat73').version
 except:
-    version = 'Unknown'
+    version = '0.00'
 try:
-    head = Repository('.').head
+    repo = Repository('.')
+    head = repo.head
     branch = head.shorthand
     name = head.name
-    message = list(head.log())[0].message
+    message = head.peel().message
 except:
-    branch = 'Unknown'
+    branch = 'unknown'
+    name = 'unknown'
+    message = 'no msg'
 
-print(f'#### Installed version: mat73-{version} on {branch}{name} {message} ####')
+print(f'#### Installed version: mat73-{version} on {branch}({name}) "{message}" ####')
 
 class Testing(unittest.TestCase):
 
