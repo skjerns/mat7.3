@@ -8,7 +8,7 @@ import os
 import numpy as np
 import mat73
 import unittest
-
+import pkg_resources
 
 
 class Testing(unittest.TestCase):
@@ -305,6 +305,8 @@ class Testing(unittest.TestCase):
         np.testing.assert_allclose(data['Artifacts'][0], 2.17391304)
 
 if __name__ == '__main__':
+    version = pkg_resources.get_distribution('mat73').version
+    print('#### Installed version:', version, '####')
     unittest.main()
 
 
