@@ -15,11 +15,14 @@ try:
 except:
     version = 'Unknown'
 try:
-    branch = Repository('.').head.shorthand  # 'master'
+    head = Repository('.').head
+    branch = head.shorthand
+    name = head.name
+    message = list(head.log())[0].message
 except:
     branch = 'Unknown'
 
-print(f'#### Installed version: mat73-{version} on {branch} ####')
+print(f'#### Installed version: mat73-{version} on {branch}{name} {message} ####')
 
 class Testing(unittest.TestCase):
 
