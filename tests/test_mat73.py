@@ -14,7 +14,7 @@ import unittest
 class Testing(unittest.TestCase):
 
     def setUp(self):
-        for i in range(1,4):
+        for i in range(1,5):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -251,9 +251,60 @@ class Testing(unittest.TestCase):
             assert np.isclose(np.sum(raw1['h'][i]),-0.019355850366449)
         for i in range(5):
             assert np.isclose(np.sum(raw1['HSmooth'][i]),-0.019355850366449)
-        
 
-if __name__ == '__main__':  
+
+    def test_file4(self):
+        """
+        Test a file created by Kubios HRV that created lots of problems before
+        """
+        d = mat73.loadmat(self.testfile4, use_attrdict=False)
+        assert len(d)==1
+        res = d['Res']
+        assert res['f_name'] == '219_92051.edf'
+        assert res['f_path'] == 'C:\\Users\\sleep\\Desktop\\set2\\ECG_I\\'
+        assert res['isPremium'] == True
+        assert len(res)==4
+        self.assertEqual(sorted(res.keys()), ['HRV', 'f_name', 'f_path', 'isPremium'])
+        hrv = res['HRV']
+        exp_key = ['Data', 'Frequency', 'NonLinear', 'Param', 'Statistics', 'Summary', 'TimeVar', 'timevaranalOK']
+        assert sorted(exp_key)==sorted(hrv.keys())
+        assert len(hrv)==8
+        assert hrv['timevaranalOK']==1.0
+        data = hrv['Data']
+        assert len(data)==18
+        assert len(data['Artifacts'])==1
+        assert data['RR'].shape == (4564,)
+        assert data['RRcorrtimes'].shape == (51,)
+        assert data['RRdt'].shape == (4564,)
+        assert data['RRdti'].shape == (20778,)
+        assert data['RRi'].shape == (20778,)
+        assert data['RRi'].shape == (20778,)
+        assert data['T_RR'].shape  == (4565,)
+        assert data['T_RRi'].shape  == (20778,)
+        assert data['T_RRorig'].shape == (4572,)
+
+
+        islist = ['RRs', 'RRsdt', 'RRsdti', 'RRsi', 'T_RRs', 'T_RRsi', 'tmp', 'Artifacts']
+        for lname in data:
+            if lname in islist:
+                assert isinstance(data[lname], list)
+                assert len(data[lname])==1
+            else:
+                assert not isinstance(data[lname], list)
+
+        assert data['RRs'][0].shape == (276, )
+        assert data['RRsdt'][0].shape == (276, )
+        assert data['RRsdti'][0].shape == (1190, )
+        assert data['RRsi'][0].shape == (1190, )
+        assert data['T_RRs'][0].shape == (276, )
+        assert data['T_RRsi'][0].shape == (1190, )
+        assert len(data['tmp'][0]) == 3
+        for arr in data['tmp'][0].values():
+            assert isinstance(arr, np.ndarray)
+
+        np.testing.assert_allclose(data['Artifacts'][0], 2.17391304)
+
+if __name__ == '__main__':
     unittest.main()
 
 

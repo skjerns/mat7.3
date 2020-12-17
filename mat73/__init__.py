@@ -33,7 +33,7 @@ class AttrDict(dict):
 
 
 class HDF5Decoder():
-    def __init__(self, verbose=True, use_attrdict=True):
+    def __init__(self, verbose=True, use_attrdict=False):
         self.verbose = verbose
         self._dict_class = AttrDict if use_attrdict else dict
         self.refs = {} # this is used in case of matlab matrices
@@ -74,18 +74,45 @@ class HDF5Decoder():
                 elem   = hdf5[key]
                 unpacked = self.unpack_mat(elem, depth=depth+1)
                 if matlab_class==b'struct' and len(elem)>1:
+
+                    values = unpacked.values()
+
+                    # we can only pack them together in MATLAB style if
+                    # all subitems are the same lengths.
+                    # MATLAB is a bit confusing here, and I hope this is
+                    # correct. see https://github.com/skjerns/mat7.3/issues/6
+                    allist = all([isinstance(item, list) for item in values])
+                    if allist:
+                        same_len = len(set([len(item) for item in values]))==1
+                    else:
+                        same_len = False
+
                     # convert struct to its proper form as in MATLAB
                     # i.e. struct[0]['key'] will access the elements
-                    items = zip(*[v for v in unpacked.values()])
-                    keys = unpacked.keys()
-                    struct = [{k:v for v,k in zip(row, keys)} for row in items]
-                    struct = [self._dict_class(d) for d in struct]
-                    d[key] = struct
-                else:
-                    d[key] = unpacked
+                    # we only recreate the MATLAB style struct
+                    # if all the subelements have the same length
+                    # and are of type list
+                    if key=='struct2_':
+                        x=1
+                    if allist and same_len:
+                        items = list(zip(*[v for v in values]))
+                        # make sure everything with the zipping went okay
+                        # assert len(items)==len(unpacked), \
+                        #     f'{elem}Unpacking error, {len(items)}!=({len(unpacked)}, \
+                        #       {elem.keys()} -> {unpacked}'
+    
+
+                        keys = unpacked.keys()
+                        struct = [{k:v for v,k in zip(row, keys)} for row in items]
+                        struct = [self._dict_class(d) for d in struct]
+                        unpacked = struct
+                d[key] = unpacked
+
             return d
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
             return self.convert_mat(hdf5)
+        else:
+            raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
 
 
     def _has_refs(self, dataset):
@@ -127,19 +154,24 @@ class HDF5Decoder():
             if len(cell)==1: # singular cells are interpreted as int/float
                 cell = cell[0]
             return cell
+
         elif mtype=='char': 
             string_array = np.array(dataset).ravel()
             string_array = ''.join([chr(x) for x in string_array])
             string_array = string_array.replace('\x00', '')
             return string_array
+
         elif mtype=='bool':
             return bool(dataset)
+
         elif mtype=='logical': 
             arr = np.array(dataset, dtype=bool).T.squeeze()
             if arr.size==1: arr=bool(arr)
             return arr
+
         elif mtype=='canonical empty': 
             return None
+
         # complex numbers need to be filtered out separately
         elif 'imag' in str(dataset.dtype):
             if dataset.attrs['MATLAB_class']==b'single':
@@ -149,11 +181,13 @@ class HDF5Decoder():
             arr = np.array(dataset)
             arr = (arr['real'] + arr['imag']*1j).astype(dtype)
             return arr.T.squeeze()
+
         # if it is none of the above, we can convert to numpy array
         elif mtype in ('double', 'single', 'int8', 'int16', 'int32', 'int64', 
                        'uint8', 'uint16', 'uint32', 'uint64'): 
             arr = np.array(dataset, dtype=dataset.dtype)
             return arr.T.squeeze()
+
         else:
             if self.verbose:
                 message = 'ERROR: MATLAB type not supported: ' + \
@@ -191,6 +225,6 @@ def savemat(filename, verbose=True):
 
     
 if __name__=='__main__':
-    d = loadmat('../tests/testfile1.mat', use_attrdict=True)
+    d = loadmat('../tests/testfile4.mat', use_attrdict=True)
 
 
