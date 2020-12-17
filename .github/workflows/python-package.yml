@@ -28,7 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest
-        pip install git+https://github.com/skjerns/mat7.3.git
+        pip install -e .
         pip install numpy h5py
     - name: Lint with flake8
       run: |
