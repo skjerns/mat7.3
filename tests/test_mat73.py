@@ -8,8 +8,9 @@ import os
 import numpy as np
 import mat73
 import unittest
-
-
+import pkg_resources
+version = pkg_resources.get_distribution('mat73').version
+print('#### Installed version:', version, '####')
 
 class Testing(unittest.TestCase):
 
