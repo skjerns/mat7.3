@@ -9,9 +9,11 @@ import numpy as np
 import mat73
 import unittest
 try:
+    from pygit2 import Repository
     import pkg_resources
     version = pkg_resources.get_distribution('mat73').version
-    print(f'#### Installed version: mat73-{version} ####')
+    branch = Repository('.').head.shorthand  # 'master'
+    print(f'#### Installed version: mat73-{version} on {branch} ####')
 except:
     print(f'### Cant print version ###: {mat73}')
 
