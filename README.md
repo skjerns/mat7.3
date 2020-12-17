@@ -25,7 +25,7 @@ As easy as that!
 By enabling `use_attrdict=True` you can even access sub-entries of `structs` as attributes, just like in MATLAB:
 
 ```Python
-data_dict = mat73.loadmat('data.mat') 
+data_dict = mat73.loadmat('data.mat', use_attrdict=True) 
 struct = data_dict['structure'] # assuming a structure was saved in the .mat
 struct[0].var1 == struct[0]['var1'] # it's the same!
 ```

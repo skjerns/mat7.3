@@ -24,7 +24,7 @@ class Testing(unittest.TestCase):
         """
         Test each default MATLAB type loads correctl
         """
-        d = mat73.loadmat(self.testfile1)
+        d = mat73.loadmat(self.testfile1, use_attrdict=False)
         data = d['data']
         
         assert len(d)==3
