@@ -92,15 +92,8 @@ class HDF5Decoder():
                     # we only recreate the MATLAB style struct
                     # if all the subelements have the same length
                     # and are of type list
-                    if key=='struct2_':
-                        x=1
                     if allist and same_len:
                         items = list(zip(*[v for v in values]))
-                        # make sure everything with the zipping went okay
-                        # assert len(items)==len(unpacked), \
-                        #     f'{elem}Unpacking error, {len(items)}!=({len(unpacked)}, \
-                        #       {elem.keys()} -> {unpacked}'
-    
 
                         keys = unpacked.keys()
                         struct = [{k:v for v,k in zip(row, keys)} for row in items]
