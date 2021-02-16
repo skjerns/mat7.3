@@ -10,6 +10,7 @@ import os
 import numpy as np
 import h5py
 import logging
+from typing import Iterable
 
 
 
@@ -139,9 +140,13 @@ class HDF5Decoder():
             cell = []
             for ref in dataset:
                 row = []
-                for r in ref:
-                    entry = self.unpack_mat(self.refs.get(r))
-                    row.append(entry)
+                # some weird style MATLAB have no refs, but direct floats or int
+                if isinstance(ref, Iterable):
+                    for r in ref:
+                        entry = self.unpack_mat(self.refs.get(r))
+                        row.append(entry)
+                else:
+                    row = [ref]
                 cell.append(row)
             cell = list(map(list, zip(*cell))) # transpose cell
             if len(cell)==1: # singular cells are interpreted as int/float
@@ -218,6 +223,6 @@ def savemat(filename, verbose=True):
 
     
 if __name__=='__main__':
-    d = loadmat('../tests/testfile4.mat', use_attrdict=True)
+    d = loadmat('../tests/testfile5.mat', use_attrdict=True)
 
 

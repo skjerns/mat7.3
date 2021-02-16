@@ -20,7 +20,7 @@ except:
 class Testing(unittest.TestCase):
 
     def setUp(self):
-        for i in range(1,5):
+        for i in range(1,6):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -309,6 +309,14 @@ class Testing(unittest.TestCase):
             assert isinstance(arr, np.ndarray)
 
         np.testing.assert_allclose(data['Artifacts'][0], 2.17391304)
+
+    def test_file5(self):
+        """
+        Test a file created by Kubios HRV that created lots of problems before
+        """
+        d = mat73.loadmat(self.testfile5, use_attrdict=False)
+
+
 
 if __name__ == '__main__':
 
