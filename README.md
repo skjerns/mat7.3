@@ -1,7 +1,7 @@
-
 ![Python package](https://github.com/skjerns/mat7.3/workflows/Python%20package/badge.svg)  ![pypi Version](https://img.shields.io/pypi/v/mat73)
 
 # mat 7.3
+
 Load MATLAB 7.3 .mat files into Python.
 
 Starting with MATLAB 7.3, `.mat` files have been changed to store as custom `hdf5` files.
@@ -30,15 +30,16 @@ struct = data_dict['structure'] # assuming a structure was saved in the .mat
 struct[0].var1 == struct[0]['var1'] # it's the same!
 ```
 
-
 ## Installation
 
 To install, run:
+
 ```
 pip install mat73
 ```
 
 Alternatively for most recent version:
+
 ```
 pip install git+https://github.com/skjerns/mat7.3
 ```
@@ -48,7 +49,7 @@ pip install git+https://github.com/skjerns/mat7.3
 The following MATLAB datatypes can be loaded
 
 | MATLAB                   | Python            |
-|--------------------------|-------------------|
+| ------------------------ | ----------------- |
 | logical                  | np.bool_          |
 | single                   | np.float32        |
 | double                   | np.float64        |
@@ -59,6 +60,7 @@ The following MATLAB datatypes can be loaded
 | struct                   | list of dicts     |
 | cell                     | list of lists     |
 | canonical empty          | []                |
+| missing                  | None              |
 | Other (ie Datetime, ...) | Not supported     |
 
 ## Short-comings

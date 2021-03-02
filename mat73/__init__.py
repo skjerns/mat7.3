@@ -182,10 +182,11 @@ class HDF5Decoder():
 
         # if it is none of the above, we can convert to numpy array
         elif mtype in ('double', 'single', 'int8', 'int16', 'int32', 'int64', 
-                       'uint8', 'uint16', 'uint32', 'uint64'): 
+                       'uint8', 'uint16', 'uint32', 'uint64'):
             arr = np.array(dataset, dtype=dataset.dtype)
             return arr.T.squeeze()
-
+        elif mtype=='missing':
+            arr = None
         else:
             if self.verbose:
                 message = 'ERROR: MATLAB type not supported: ' + \

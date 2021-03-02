@@ -45,12 +45,13 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==28
+        assert len(data)==29
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
         assert data['arr_bool'].dtype==bool
         assert data['arr_char']=='test'
+        assert data['missing_']==None
         np.testing.assert_array_equal(data['arr_double'], np.array([1.1,1.2,0.3],dtype=np.float64))
         assert data['arr_double'].dtype==np.float64
         np.testing.assert_array_equal(data['arr_float'], np.array([[1.1,2],[1.2,3],[0.3,4]],dtype=np.float32).T)
@@ -115,7 +116,7 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==28
+        assert len(data)==29
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -176,7 +177,7 @@ class Testing(unittest.TestCase):
         data = d.data
 
         assert len(d)==3
-        assert len(data)==28
+        assert len(data)==29
         assert data.arr_two_three.shape==(3,2)
         np.testing.assert_allclose(d.secondvar, [1,2,3,4])
         np.testing.assert_array_equal(data.arr_bool, np.array([True,True,False]))
