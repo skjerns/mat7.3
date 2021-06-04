@@ -328,20 +328,6 @@ class Testing(unittest.TestCase):
         """
         d = mat73.loadmat(self.testfile5, use_attrdict=False)
 
-
-    def test_file4_loadspecific(self):
-
-        start = time.time()
-        for i in range(10):
-            x = mat73.loadmat(self.testfile4)
-        end1 = time.time()-start
-        start = time.time()
-        for i in range(10):
-            x = mat73.loadmat(self.testfile4, only_load='Res\f_name')
-        end2 = time.time()-start
-        self.assertLess(end2, end1, 'loading specific var wasn\t faster')
-
-
     def test_file6_empty_cell_array(self):
 
         data = mat73.loadmat(self.testfile6)
