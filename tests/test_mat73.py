@@ -332,10 +332,12 @@ class Testing(unittest.TestCase):
     def test_file4_loadspecific(self):
 
         start = time.time()
-        x = mat73.loadmat(self.testfile4)
+        for i in range(10):
+            x = mat73.loadmat(self.testfile4)
         end1 = time.time()-start
         start = time.time()
-        x = mat73.loadmat(self.testfile4, only_load='Res\f_name')
+        for i in range(10):
+            x = mat73.loadmat(self.testfile4, only_load='Res\f_name')
         end2 = time.time()-start
         self.assertLess(end2, end1, 'loading specific var wasn\t faster')
 
