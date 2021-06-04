@@ -8,6 +8,7 @@ import os
 import numpy as np
 import mat73
 import unittest
+import time
 try:
     from pygit2 import Repository
     import pkg_resources
@@ -30,7 +31,7 @@ print(f'#### Installed version: mat73-{version} on {branch}({name}) "{message}" 
 class Testing(unittest.TestCase):
 
     def setUp(self):
-        for i in range(1,6):
+        for i in range(1,7):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -327,6 +328,23 @@ class Testing(unittest.TestCase):
         """
         d = mat73.loadmat(self.testfile5, use_attrdict=False)
 
+
+    def test_file4_loadspecific(self):
+
+        start = time.time()
+        x = mat73.loadmat(self.testfile4)
+        end1 = time.time()-start
+        start = time.time()
+        x = mat73.loadmat(self.testfile4, only_load='Res\f_name')
+        end2 = time.time()-start
+        self.assertLess(end2, end1, 'loading specific var wasn\t faster')
+
+
+    def test_file6_empty_cell_array(self):
+
+        data = mat73.loadmat(self.testfile6)
+        np.testing.assert_array_almost_equal(data['A'], np.empty([0,0]))
+        np.testing.assert_array_almost_equal(data['B'], np.array([1,2,3], dtype=float))
 
 
 if __name__ == '__main__':

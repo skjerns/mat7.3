@@ -39,7 +39,7 @@ class HDF5Decoder():
         self._dict_class = AttrDict if use_attrdict else dict
         self.refs = {} # this is used in case of matlab matrices
 
-    def mat2dict(self, hdf5):
+    def mat2dict(self, hdf5, only_load=None):
         if '#refs#' in hdf5: 
             self.refs = hdf5['#refs#']
         d = self._dict_class()
@@ -48,6 +48,7 @@ class HDF5Decoder():
                 continue
             ext = os.path.splitext(hdf5.filename)[1].lower()
             if ext.lower()=='.mat':
+                # if hdf5
                 d[var] = self.unpack_mat(hdf5[var])
             elif ext=='.h5' or ext=='.hdf5':
                 err = 'Can only load .mat. Please use package hdfdict instead'\
@@ -133,9 +134,13 @@ class HDF5Decoder():
 
         if self._has_refs(dataset):
             mtype='cell'
+        elif 'MATLAB_empty' in dataset.attrs.keys() and \
+            dataset.attrs['MATLAB_class'].decode()=='cell':
+            mtype = 'empty'
         else:
             mtype = dataset.attrs['MATLAB_class'].decode()
-       
+
+
         if mtype=='cell':
             cell = []
             for ref in dataset:
@@ -152,6 +157,10 @@ class HDF5Decoder():
             if len(cell)==1: # singular cells are interpreted as int/float
                 cell = cell[0]
             return cell
+
+        elif mtype=='empty':
+            dims = [x for x in dataset]
+            return np.empty(dims)
 
         elif mtype=='char': 
             string_array = np.array(dataset).ravel()
@@ -195,7 +204,7 @@ class HDF5Decoder():
             return None
         
             
-def loadmat(filename, use_attrdict=True, verbose=True):
+def loadmat(filename, use_attrdict=True, only_load=None, verbose=True):
     """
     Loads a MATLAB 7.3 .mat file, which is actually a
     HDF5 file with some custom matlab annotations inside
@@ -206,13 +215,15 @@ def loadmat(filename, use_attrdict=True, verbose=True):
                          WARNING: builtin dict functions cannot be overwritten,
                          e.g. keys(), pop(), ...
                          these will still be available by struct['keys']
+    :param verbose: print warnings
+    :param only_load: A list of HDF5 paths that should be loaded
     :returns: A dictionary with the matlab variables loaded
     """
     assert os.path.isfile(filename), '{} does not exist'.format(filename)
     decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict)
     try:
         with h5py.File(filename, 'r') as hdf5:
-            dictionary = decoder.mat2dict(hdf5)
+            dictionary = decoder.mat2dict(hdf5, only_load=only_load)
         return dictionary
     except OSError:
         raise TypeError('{} is not a MATLAB 7.3 file. '\
@@ -224,6 +235,8 @@ def savemat(filename, verbose=True):
 
     
 if __name__=='__main__':
-    d = loadmat('../tests/testfile5.mat', use_attrdict=True)
+    # d = loadmat('../tests/testfile5.mat', use_attrdict=True)
 
 
+    file = 'C:/Users/Simon/Desktop/mat7.3/tests/testfile6.mat'
+    data = loadmat(file)
