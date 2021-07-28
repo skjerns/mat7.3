@@ -12,7 +12,7 @@ import h5py
 import logging
 from typing import Iterable
 
-
+tests should fail
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
