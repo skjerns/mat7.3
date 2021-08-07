@@ -31,7 +31,7 @@ print(f'#### Installed version: mat73-{version} on {branch}({name}) "{message}" 
 class Testing(unittest.TestCase):
 
     def setUp(self):
-        for i in range(1,7):
+        for i in range(1,8):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -331,8 +331,13 @@ class Testing(unittest.TestCase):
     def test_file6_empty_cell_array(self):
 
         data = mat73.loadmat(self.testfile6)
-        np.testing.assert_array_almost_equal(data['A'], np.empty([0,0]))
+        np.testing.assert_array_almost_equal(data['A'], [])
         np.testing.assert_array_almost_equal(data['B'], np.array([1,2,3], dtype=float))
+
+    def test_file7_empty_cell_array(self):
+        data = mat73.loadmat(self.testfile7)
+        
+    
 
 
 if __name__ == '__main__':
