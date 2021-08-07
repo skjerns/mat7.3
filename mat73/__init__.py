@@ -13,6 +13,12 @@ import logging
 from typing import Iterable
 
 
+def empty(*dims):
+    if len(dims)==1:
+        return [[] for x in range(dims[0])]
+    else:
+        return [empty(*dims[1:]) for _ in range(dims[0])]
+
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
@@ -71,14 +77,14 @@ class HDF5Decoder():
             raise RecursionError("Maximum number of 99 recursions reached.")
         if isinstance(hdf5, (h5py._hl.group.Group)):
             d = self._dict_class()
+
             for key in hdf5:
                 matlab_class = hdf5[key].attrs.get('MATLAB_class')
                 elem   = hdf5[key]
                 unpacked = self.unpack_mat(elem, depth=depth+1)
-                if matlab_class==b'struct' and len(elem)>1:
-
+                if matlab_class==b'struct' and len(elem)>1 and \
+                isinstance(unpacked, dict):
                     values = unpacked.values()
-
                     # we can only pack them together in MATLAB style if
                     # all subitems are the same lengths.
                     # MATLAB is a bit confusing here, and I hope this is
@@ -105,7 +111,7 @@ class HDF5Decoder():
 
             return d
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
-            return self.convert_mat(hdf5)
+            return self.convert_mat(hdf5, depth)
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
 
@@ -118,7 +124,7 @@ class HDF5Decoder():
         return False
 
 
-    def convert_mat(self, dataset):
+    def convert_mat(self, dataset, depth):
         """
         Converts h5py.dataset into python native datatypes
         according to the matlab class annotation
@@ -135,7 +141,7 @@ class HDF5Decoder():
         if self._has_refs(dataset):
             mtype='cell'
         elif 'MATLAB_empty' in dataset.attrs.keys() and \
-            dataset.attrs['MATLAB_class'].decode()=='cell':
+            dataset.attrs['MATLAB_class'].decode()in ['cell', 'struct']:
             mtype = 'empty'
         else:
             mtype = dataset.attrs['MATLAB_class'].decode()
@@ -148,7 +154,7 @@ class HDF5Decoder():
                 # some weird style MATLAB have no refs, but direct floats or int
                 if isinstance(ref, Iterable):
                     for r in ref:
-                        entry = self.unpack_mat(self.refs.get(r))
+                        entry = self.unpack_mat(self.refs.get(r), depth+1)
                         row.append(entry)
                 else:
                     row = [ref]
@@ -160,7 +166,7 @@ class HDF5Decoder():
 
         elif mtype=='empty':
             dims = [x for x in dataset]
-            return np.empty(dims)
+            return empty(*dims)
 
         elif mtype=='char': 
             string_array = np.array(dataset).ravel()
@@ -204,7 +210,7 @@ class HDF5Decoder():
             return None
         
             
-def loadmat(filename, use_attrdict=True, only_load=None, verbose=True):
+def loadmat(filename, use_attrdict=False, only_load=None, verbose=True):
     """
     Loads a MATLAB 7.3 .mat file, which is actually a
     HDF5 file with some custom matlab annotations inside
@@ -238,5 +244,5 @@ if __name__=='__main__':
     # d = loadmat('../tests/testfile5.mat', use_attrdict=True)
 
 
-    file = 'C:/Users/Simon/Desktop/mat7.3/tests/testfile6.mat'
+    file = '../tests/testfile7.mat'
     data = loadmat(file)
