@@ -196,8 +196,6 @@ class HDF5Decoder():
             return arr.T.squeeze()
         elif mtype=='missing':
             arr = None
-        elif mtype=='struct':
-            return dict(enumerate(dataset[:].flatten(), 1))
         else:
             if self.verbose:
                 message = 'ERROR: MATLAB type not supported: ' + \
