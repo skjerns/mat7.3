@@ -225,7 +225,7 @@ def loadmat(filename, use_attrdict=False, only_load=None, verbose=True):
     :param only_load: A list of HDF5 paths that should be loaded
     :returns: A dictionary with the matlab variables loaded
     """
-    assert os.path.isfile(filename), '{} does not exist'.format(filename)
+    #assert os.path.isfile(filename), '{} does not exist'.format(filename)
     decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict)
     try:
         with h5py.File(filename, 'r') as hdf5:
