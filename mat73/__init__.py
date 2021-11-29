@@ -65,7 +65,6 @@ class HDF5Decoder():
                 raise ValueError('can only unpack .mat')
         return d
     
-   
     def unpack_mat(self, hdf5, depth=0):
         """
         unpack a h5py entry: if it's a group expand,
@@ -115,14 +114,12 @@ class HDF5Decoder():
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
 
-
+    # @profile
     def _has_refs(self, dataset):
-        if len(dataset)==0: return False
-        if not isinstance(dataset[0], np.ndarray): return False
+        if len(dataset.shape)<2: return False
         if isinstance(dataset[0][0], h5py.h5r.Reference):  
             return True
         return False
-
 
     def convert_mat(self, dataset, depth):
         """
@@ -244,5 +241,5 @@ if __name__=='__main__':
     # d = loadmat('../tests/testfile5.mat', use_attrdict=True)
 
 
-    file = '../tests/testfile7.mat'
+    file = '../tests/testfile8.mat'
     data = loadmat(file)
