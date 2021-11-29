@@ -31,7 +31,7 @@ print(f'#### Installed version: mat73-{version} on {branch}({name}) "{message}" 
 class Testing(unittest.TestCase):
 
     def setUp(self):
-        for i in range(1,8):
+        for i in range(1,9):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -337,7 +337,11 @@ class Testing(unittest.TestCase):
     def test_file7_empty_cell_array(self):
         data = mat73.loadmat(self.testfile7)
         
-    
+    def test_file8_large(self):
+        import stimer
+        with stimer:
+            data = mat73.loadmat(self.testfile8)
+            
 
 
 if __name__ == '__main__':
