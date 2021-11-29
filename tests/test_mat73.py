@@ -337,10 +337,6 @@ class Testing(unittest.TestCase):
     def test_file7_empty_cell_array(self):
         data = mat73.loadmat(self.testfile7)
         
-    def test_file8_large(self):
-        import stimer
-        with stimer:
-            data = mat73.loadmat(self.testfile8)
             
 
 

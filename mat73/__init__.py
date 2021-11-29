@@ -114,7 +114,6 @@ class HDF5Decoder():
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
 
-    # @profile
     def _has_refs(self, dataset):
         if len(dataset.shape)<2: return False
         if isinstance(dataset[0][0], h5py.h5r.Reference):  
