@@ -22,6 +22,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install setuptools wheel twine
+    - name: Run tests once
+      run: |
+        pip install flake8 pytest
+        pip install -e .
+        pip install numpy h5py
+    - name: Test with pytest
+      run: |
+        pytest -s -vv
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
