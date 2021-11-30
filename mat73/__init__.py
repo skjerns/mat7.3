@@ -113,9 +113,12 @@ class HDF5Decoder():
             return self.convert_mat(hdf5, depth)
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
-
+            
+    @profile
     def _has_refs(self, dataset):
         if len(dataset.shape)<2: return False
+        # dataset[0].
+        dataset[0][0]
         if isinstance(dataset[0][0], h5py.h5r.Reference):  
             return True
         return False
@@ -127,21 +130,33 @@ class HDF5Decoder():
         """      
         # all MATLAB variables have the attribute MATLAB_class
         # if this is not present, it is not convertible
-        if not 'MATLAB_class' in dataset.attrs and not self._has_refs(dataset):
+        if 'MATLAB_class' in dataset.attrs:
+            MATLAB_class = dataset.attrs['MATLAB_class'].decode()
+        else:
+            MATLAB_class = False
+            
+        if not MATLAB_class and not self._has_refs(dataset):
             if self.verbose:
                 message = 'ERROR: not a MATLAB datatype: ' + \
                           '{}, ({})'.format(dataset, dataset.dtype)
                 logging.error(message)
             return None
 
-        if self._has_refs(dataset):
-            mtype='cell'
-        elif 'MATLAB_empty' in dataset.attrs.keys() and \
-            dataset.attrs['MATLAB_class'].decode()in ['cell', 'struct']:
+        # if has
+        known_cls = ['cell', 'char', 'bool', 'logical', 'double', 'single', 
+                     'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16',
+                     'uint32', 'uint64']
+
+        if 'MATLAB_empty' in dataset.attrs.keys() and \
+            MATLAB_class in ['cell', 'struct']:
             mtype = 'empty'
+        elif MATLAB_class in known_cls:
+                mtype = dataset.attrs['MATLAB_class'].decode()
+
+        elif self._has_refs(dataset):
+            mtype='cell'
         else:
             mtype = dataset.attrs['MATLAB_class'].decode()
-
 
         if mtype=='cell':
             cell = []
