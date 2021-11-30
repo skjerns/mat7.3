@@ -64,8 +64,8 @@ class HDF5Decoder():
             else:
                 raise ValueError('can only unpack .mat')
         return d
-    @profile
-
+    
+    # @profile
     def unpack_mat(self, hdf5, depth=0, MATLAB_class=None):
         """
         unpack a h5py entry: if it's a group expand,
@@ -118,7 +118,7 @@ class HDF5Decoder():
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
     
-    @profile
+    # @profile
     def _has_refs(self, dataset):
         if len(dataset.shape)<2: return False
         # dataset[0].
@@ -127,7 +127,7 @@ class HDF5Decoder():
             return True
         return False
     
-    @profile
+    # @profile
     def convert_mat(self, dataset, depth, MATLAB_class=None):
         """
         Converts h5py.dataset into python native datatypes
