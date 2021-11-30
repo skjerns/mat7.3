@@ -27,7 +27,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest pygit2
+        pip install flake8 pytest
         pip install -e .
         pip install numpy h5py
     - name: Lint with flake8
