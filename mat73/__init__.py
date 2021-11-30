@@ -80,9 +80,10 @@ class HDF5Decoder():
 
             for key in hdf5:
                 elem   = hdf5[key]
-                MATLAB_class = elem.attrs['MATLAB_class']
-                if MATLAB_class is not None: 
-                    MATLAB_class = MATLAB_class.decode()
+                if 'MATLAB_class' in elem.attrs:
+                    MATLAB_class = elem.attrs.get('MATLAB_class')
+                    if MATLAB_class is not None: 
+                        MATLAB_class = MATLAB_class.decode()
                 unpacked = self.unpack_mat(elem, depth=depth+1, 
                                            MATLAB_class=MATLAB_class)
                 if MATLAB_class=='struct' and len(elem)>1 and \
@@ -155,12 +156,11 @@ class HDF5Decoder():
             MATLAB_class in ['cell', 'struct']:
             mtype = 'empty'
         elif MATLAB_class in known_cls:
-                mtype = dataset.attrs['MATLAB_class'].decode()
-
+                mtype = MATLAB_class
         elif self._has_refs(dataset):
             mtype='cell'
         else:
-            mtype = dataset.attrs['MATLAB_class'].decode()
+            mtype = MATLAB_class
 
         if mtype=='cell':
             cell = []
@@ -184,7 +184,7 @@ class HDF5Decoder():
             return empty(*dims)
 
         elif mtype=='char': 
-            string_array = np.array(dataset).ravel()
+            string_array = np.ravel(dataset)
             string_array = ''.join([chr(x) for x in string_array])
             string_array = string_array.replace('\x00', '')
             return string_array
