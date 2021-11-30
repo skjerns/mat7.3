@@ -64,8 +64,9 @@ class HDF5Decoder():
             else:
                 raise ValueError('can only unpack .mat')
         return d
-    
-    def unpack_mat(self, hdf5, depth=0):
+    @profile
+
+    def unpack_mat(self, hdf5, depth=0, MATLAB_class=None):
         """
         unpack a h5py entry: if it's a group expand,
         if it's a dataset convert
@@ -78,10 +79,13 @@ class HDF5Decoder():
             d = self._dict_class()
 
             for key in hdf5:
-                matlab_class = hdf5[key].attrs.get('MATLAB_class')
                 elem   = hdf5[key]
-                unpacked = self.unpack_mat(elem, depth=depth+1)
-                if matlab_class==b'struct' and len(elem)>1 and \
+                MATLAB_class = elem.attrs['MATLAB_class']
+                if MATLAB_class is not None: 
+                    MATLAB_class = MATLAB_class.decode()
+                unpacked = self.unpack_mat(elem, depth=depth+1, 
+                                           MATLAB_class=MATLAB_class)
+                if MATLAB_class=='struct' and len(elem)>1 and \
                 isinstance(unpacked, dict):
                     values = unpacked.values()
                     # we can only pack them together in MATLAB style if
@@ -110,10 +114,11 @@ class HDF5Decoder():
 
             return d
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
-            return self.convert_mat(hdf5, depth)
+            return self.convert_mat(hdf5, depth, MATLAB_class=MATLAB_class)
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
-            
+    
+    @profile
     def _has_refs(self, dataset):
         if len(dataset.shape)<2: return False
         # dataset[0].
@@ -121,18 +126,18 @@ class HDF5Decoder():
         if isinstance(dataset[0][0], h5py.h5r.Reference):  
             return True
         return False
-
-    def convert_mat(self, dataset, depth):
+    
+    @profile
+    def convert_mat(self, dataset, depth, MATLAB_class=None):
         """
         Converts h5py.dataset into python native datatypes
         according to the matlab class annotation
         """      
         # all MATLAB variables have the attribute MATLAB_class
         # if this is not present, it is not convertible
-        if 'MATLAB_class' in dataset.attrs:
+        if MATLAB_class is None and 'MATLAB_class' in dataset.attrs:
             MATLAB_class = dataset.attrs['MATLAB_class'].decode()
-        else:
-            MATLAB_class = False
+
             
         if not MATLAB_class and not self._has_refs(dataset):
             if self.verbose:
