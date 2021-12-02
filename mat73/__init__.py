@@ -36,25 +36,58 @@ class AttrDict(dict):
     def __setattr__(self, key, value):
         return self.__setitem__(key, value)
 
-
+def print_tree(node):
+    if node.startswith('#refs#/') or node.startswith('#subsystem#/'):
+        return
+    print(' ', node)
 
 
 class HDF5Decoder():
-    def __init__(self, verbose=True, use_attrdict=False):
+    def __init__(self, verbose=True, use_attrdict=False,
+                 only_include=None):
+        
+        if isinstance(only_include, str):
+            only_include = [only_include]
+        if only_include is not None:
+            only_include = [s if s[0]=='/' else f'/{s}' for s in only_include]
+            only_include = [s[:-1] if s[-1]=='/' else s for s in only_include]
         self.verbose = verbose
         self._dict_class = AttrDict if use_attrdict else dict
         self.refs = {} # this is used in case of matlab matrices
+        self.only_include = only_include
+        if only_include is not None:
+            _vardict = dict(zip(only_include, [False]*len(only_include)))
+            self._found_include_var = _vardict
+            
 
-    def mat2dict(self, hdf5, only_load=None):
+
+    def is_included(self, hdf5):
+        # if only_include is not specified, we always return True
+        # because we load everything
+        if self.only_include is None:
+            return True
+        # see if the current name is in any of the included variables
+        for s in self.only_include:
+            if s in hdf5.name:
+                self._found_include_var[s] = True
+            if s in hdf5.name or hdf5.name in s:
+                return True
+        return False
+        
+
+    def mat2dict(self, hdf5):
+        
         if '#refs#' in hdf5: 
             self.refs = hdf5['#refs#']
         d = self._dict_class()
         for var in hdf5:
+            # this first loop is just here to catch the refs and subsystem vars
             if var in ['#refs#','#subsystem#']:
                 continue
             ext = os.path.splitext(hdf5.filename)[1].lower()
             if ext.lower()=='.mat':
-                # if hdf5
+                if not self.is_included(hdf5[var]):
+                    continue
                 d[var] = self.unpack_mat(hdf5[var])
             elif ext=='.h5' or ext=='.hdf5':
                 err = 'Can only load .mat. Please use package hdfdict instead'\
@@ -63,6 +96,14 @@ class HDF5Decoder():
                 raise NotImplementedError(err)
             else:
                 raise ValueError('can only unpack .mat')
+        if self.only_include is not None:
+            for var, found in self._found_include_var.items():
+                if not found:
+                    logging.warn(f'Variable "{var}" was specified to be loaded'\
+                                  ' but could not be found.')
+            if not any(list(self._found_include_var.values())):
+                print(hdf5.filename, 'contains the following vars:')
+                hdf5.visit(print_tree)
         return d
     
     # @profile
@@ -80,6 +121,8 @@ class HDF5Decoder():
 
             for key in hdf5:
                 elem   = hdf5[key]
+                if not self.is_included(elem):
+                    continue
                 if 'MATLAB_class' in elem.attrs:
                     MATLAB_class = elem.attrs.get('MATLAB_class')
                     if MATLAB_class is not None: 
@@ -115,7 +158,8 @@ class HDF5Decoder():
 
             return d
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
-            return self.convert_mat(hdf5, depth, MATLAB_class=MATLAB_class)
+            if  self.is_included(hdf5):
+                return self.convert_mat(hdf5, depth, MATLAB_class=MATLAB_class)
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
     
@@ -225,7 +269,7 @@ class HDF5Decoder():
             return None
         
             
-def loadmat(filename, use_attrdict=False, only_load=None, verbose=True):
+def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
     """
     Loads a MATLAB 7.3 .mat file, which is actually a
     HDF5 file with some custom matlab annotations inside
@@ -237,14 +281,15 @@ def loadmat(filename, use_attrdict=False, only_load=None, verbose=True):
                          e.g. keys(), pop(), ...
                          these will still be available by struct['keys']
     :param verbose: print warnings
-    :param only_load: A list of HDF5 paths that should be loaded
+    :param only_include: A list of HDF5 paths that should be loaded
     :returns: A dictionary with the matlab variables loaded
     """
     assert os.path.isfile(filename), '{} does not exist'.format(filename)
-    decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict)
+    decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict,
+                          only_include=only_include)
     try:
         with h5py.File(filename, 'r') as hdf5:
-            dictionary = decoder.mat2dict(hdf5, only_load=only_load)
+            dictionary = decoder.mat2dict(hdf5)
         return dictionary
     except OSError:
         raise TypeError('{} is not a MATLAB 7.3 file. '\

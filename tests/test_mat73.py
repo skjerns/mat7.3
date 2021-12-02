@@ -337,7 +337,29 @@ class Testing(unittest.TestCase):
     def test_file7_empty_cell_array(self):
         data = mat73.loadmat(self.testfile7)
         
-            
+    def test_load_specific_vars(self):
+        for key in ['keys', ['keys']]:
+            data = mat73.loadmat(self.testfile1, only_include=key)
+            assert len(data)==1
+            assert data['keys']=='must_not_overwrite'
+       
+        with self.assertWarns(Warning):
+            data = mat73.loadmat(self.testfile1, only_include='notpresent')
+
+        data = mat73.loadmat(self.testfile1, only_include=['data', 'keys'])
+        assert len(data)==2
+        assert len(data['data'])==29
+        assert len(data['data']['cell_'])==7
+        
+        # check if loading times are faster, should be the case.
+        start = time.time()
+        data = mat73.loadmat(self.testfile4)
+        elapsed1 = time.time()-start
+        start = time.time()
+        data = mat73.loadmat(self.testfile4, only_include='Res/HRV/Param/use_custom_print_command')
+        elapsed2 = time.time()-start
+        assert elapsed2<elapsed1, 'loading specific var was not faster'
+        
 
 
 if __name__ == '__main__':
