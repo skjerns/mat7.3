@@ -281,7 +281,11 @@ def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
                          e.g. keys(), pop(), ...
                          these will still be available by struct['keys']
     :param verbose: print warnings
-    :param only_include: A list of HDF5 paths that should be loaded
+    :param only_include: A list of HDF5 paths that should be loaded. 
+                         this can greatly reduce loading times. If a path 
+                         contains further sub datasets, these will be loaded
+                         as well, e.g. 'struct/' will load all subvars of 
+                         struct, 'struct/var' will load only ['struct']['var']
     :returns: A dictionary with the matlab variables loaded
     """
     assert os.path.isfile(filename), '{} does not exist'.format(filename)
