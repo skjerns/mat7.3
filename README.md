@@ -29,6 +29,15 @@ data_dict = mat73.loadmat('data.mat', use_attrdict=True)
 struct = data_dict['structure'] # assuming a structure was saved in the .mat
 struct[0].var1 == struct[0]['var1'] # it's the same!
 ```
+You can also specifiy to only load a specific variable or variable tree, useful to reduce loading times
+```Python
+data_dict = mat73.loadmat('data.mat', only_include='structure') 
+struct = data_dict['structure'] # now only structure is loaded and nothing else
+
+data_dict = mat73.loadmat('data.mat', only_include=['var/subvar/subsubvar', 'tree1/']) 
+tree1 = data_dict['tree1'] # the entire tree has been loaded, so tree1 is a dict with all subvars of tree1
+subsubvar = data_dict['var']['subvar']['subsubvar'] # this subvar has been loaded
+```
 
 ## Installation
 
@@ -67,5 +76,5 @@ The following MATLAB datatypes can be loaded
 
 - This library will __only__ load mat 7.3 files. For older versions use `scipy.io.loadmat`
 - Proprietary MATLAB types (e.g `datetime`, `duriation`, etc) are not supported. If someone tells me how to convert them, I'll implement that
-- For now, you can't save anything back to the .mat. Let me know if you need this functionality, would be quick to implement.
+- For now, you can't save anything back to the .mat. It's a bit more difficult than expected, so it's not on the roadmap for now
 - See also [hdf5storage](https://github.com/frejanordsiek/hdf5storage), which can indeed be used for saving .mat, but has less features for loading
