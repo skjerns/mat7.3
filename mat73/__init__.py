@@ -40,7 +40,32 @@ def print_tree(node):
     if node.startswith('#refs#/') or node.startswith('#subsystem#/'):
         return
     print(' ', node)
-
+    
+    
+    
+class HDF5Encoder():
+    def __init__(self, hdf5,  on_error='raise', verbose=True):
+        assert on_error in ['raise', 'ignore'], \
+            'on_error must be either "raise" or "ignore"'
+        self.verbose = verbose
+        self.on_error = on_error
+        self.hdf5 = hdf5
+        self.refs = hdf5.create_group('#refs#')
+     
+        
+    def pack_mat(self, obj, parent):
+        if isinstance(obj, np.ndarray):
+            pass
+        elif isinstance(obj, dict):
+            pass
+        elif isinstance(obj, list):
+            pass
+        elif isinstance(obj, set):
+            pass
+        else:
+            if self.on_error=='raise':
+                raise TypeError(f'Unknown type "{type(obj)}"')
+        
 
 class HDF5Decoder():
     def __init__(self, verbose=True, use_attrdict=False,
@@ -300,7 +325,15 @@ def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
                         'Load with scipy.io.loadmat() instead.'.format(filename))
             
             
-def savemat(filename, verbose=True):
+def savemat(obj, filename, on_error='raise', verbose=True):
+    if os.path.isfile(filename):
+        raise OSError(17, 'File already exists, no overwrite')
+        
+    encoder = HDF5Encoder(on_error=on_error, verbose=verbose)
+    
+    with h5py.File(filename, 'w') as hdf5:
+        encoder.pack_mat(obj, hdf5)
+        
     raise NotImplementedError
 
     
