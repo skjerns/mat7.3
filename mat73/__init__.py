@@ -161,7 +161,7 @@ class HDF5Decoder():
             if  self.is_included(hdf5):
                 return self.convert_mat(hdf5, depth, MATLAB_class=MATLAB_class)
         else:
-            raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
+            raise Exception(f'Unknown hdf5 type: {type(hdf5)}')
     
     # @profile
     def _has_refs(self, dataset):
