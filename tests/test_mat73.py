@@ -254,6 +254,17 @@ class Testing(unittest.TestCase):
         np.testing.assert_array_almost_equal(raw1['HSmooth'][0][2], [ 0.001139-4.233492e-04j,  0.00068 +8.927040e-06j,
         0.002382-7.647651e-04j, -0.012677+3.767829e-03j])
 
+    def test_file2_with_other_suffix(self):
+        """
+        Test that complex numbers are loaded correctly
+        """
+        new_file2 = self.testfile2.replace(".mat", ".other_suffix")
+        os.link(self.testfile2, new_file2)
+        assert (
+            str(mat73.loadmat(self.testfile2)) == 
+            str(mat73.loadmat(new_file2, strict_suffix=False))
+        )
+        os.remove(new_file2)
 
     def test_file3(self):
         """

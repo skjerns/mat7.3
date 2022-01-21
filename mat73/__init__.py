@@ -44,7 +44,7 @@ def print_tree(node):
 
 class HDF5Decoder():
     def __init__(self, verbose=True, use_attrdict=False,
-                 only_include=None):
+                 only_include=None, strict_suffix=True):
         
         if isinstance(only_include, str):
             only_include = [only_include]
@@ -58,7 +58,7 @@ class HDF5Decoder():
         if only_include is not None:
             _vardict = dict(zip(only_include, [False]*len(only_include)))
             self._found_include_var = _vardict
-            
+        self.strict_suffix = strict_suffix
 
 
     def is_included(self, hdf5):
@@ -85,7 +85,7 @@ class HDF5Decoder():
             if var in ['#refs#','#subsystem#']:
                 continue
             ext = os.path.splitext(hdf5.filename)[1].lower()
-            if ext.lower()=='.mat':
+            if not self.strict_suffix or ext.lower()=='.mat':
                 if not self.is_included(hdf5[var]):
                     continue
                 d[var] = self.unpack_mat(hdf5[var])
@@ -95,7 +95,7 @@ class HDF5Decoder():
                       'https://github.com/SiggiGue/hdfdict'
                 raise NotImplementedError(err)
             else:
-                raise ValueError('can only unpack .mat')
+                raise ValueError('can only unpack .mat in strict suffix mode')
         if self.only_include is not None:
             for var, found in self._found_include_var.items():
                 if not found:
@@ -269,7 +269,8 @@ class HDF5Decoder():
             return None
         
             
-def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
+def loadmat(filename, use_attrdict=False, only_include=None, verbose=True,
+            strict_suffix=True):
     """
     Loads a MATLAB 7.3 .mat file, which is actually a
     HDF5 file with some custom matlab annotations inside
@@ -290,7 +291,8 @@ def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
     """
     assert os.path.isfile(filename), '{} does not exist'.format(filename)
     decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict,
-                          only_include=only_include)
+                          only_include=only_include, 
+                          strict_suffix=strict_suffix)
     try:
         with h5py.File(filename, 'r') as hdf5:
             dictionary = decoder.mat2dict(hdf5)
