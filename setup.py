@@ -1,5 +1,6 @@
 import setuptools
-from mat73._version import __version__
+
+exec(open('mat73/version.py').read())
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
