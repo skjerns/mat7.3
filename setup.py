@@ -1,5 +1,6 @@
 import setuptools
 
+__version__ = None # will be loaded in the next line
 exec(open('mat73/version.py').read())
 
 with open("README.md", "r") as fh:
