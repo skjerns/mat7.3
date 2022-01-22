@@ -11,8 +11,7 @@ import numpy as np
 import h5py
 import logging
 from typing import Iterable
-
-__version__ = '0.56'
+from mat73._version import __version__
 
 def empty(*dims):
     if len(dims)==1:
