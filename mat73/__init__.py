@@ -12,6 +12,7 @@ import h5py
 import logging
 from typing import Iterable
 
+__version__ = '0.56'
 
 def empty(*dims):
     if len(dims)==1:
