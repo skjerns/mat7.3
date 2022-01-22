@@ -11,7 +11,7 @@ import numpy as np
 import h5py
 import logging
 from typing import Iterable
-
+from mat73.version import __version__
 
 def empty(*dims):
     if len(dims)==1:
@@ -84,22 +84,15 @@ class HDF5Decoder():
             # this first loop is just here to catch the refs and subsystem vars
             if var in ['#refs#','#subsystem#']:
                 continue
-            ext = os.path.splitext(hdf5.filename)[1].lower()
-            if ext.lower()=='.mat':
-                if not self.is_included(hdf5[var]):
-                    continue
-                d[var] = self.unpack_mat(hdf5[var])
-            elif ext=='.h5' or ext=='.hdf5':
-                err = 'Can only load .mat. Please use package hdfdict instead'\
-                      '\npip install hdfdict\n' \
-                      'https://github.com/SiggiGue/hdfdict'
-                raise NotImplementedError(err)
-            else:
-                raise ValueError('can only unpack .mat')
+
+            if not self.is_included(hdf5[var]):
+                continue
+            d[var] = self.unpack_mat(hdf5[var])
+
         if self.only_include is not None:
             for var, found in self._found_include_var.items():
                 if not found:
-                    logging.warn(f'Variable "{var}" was specified to be loaded'\
+                    logging.warning(f'Variable "{var}" was specified to be loaded'\
                                   ' but could not be found.')
             if not any(list(self._found_include_var.values())):
                 print(hdf5.filename, 'contains the following vars:')
@@ -291,6 +284,11 @@ def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
     assert os.path.isfile(filename), '{} does not exist'.format(filename)
     decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict,
                           only_include=only_include)
+    
+    ext = os.path.splitext(filename)[1].lower()
+    if ext!='.mat':
+        logging.warning('Can only load MATLAB .mat file, this file type might '
+                        f'be unsupported: {filename}')
     try:
         with h5py.File(filename, 'r') as hdf5:
             dictionary = decoder.mat2dict(hdf5)
