@@ -22,7 +22,6 @@ data.arr_char = char('test')
 data.arr_nan = [NaN,NaN]
 data.nan_ = NaN
 data.missing_ = missing
-data.missing_ = missing(4)
 data.complex_ = complex(2, 3)
 data.complex2_ = complex(123456789.123456789, 987654321.987654321)
 data.complex3_ = complex(8.909089035006170e-04, 0.000000000000000e+00)
@@ -38,3 +37,10 @@ secondvar = [1,2,3,4]
 keys = 'must_not_overwrite'
 
 save('testfile1.mat','-v7.3')
+
+clear all
+
+%% second created file
+
+data.x1 = {'test', 'asd'};
+data.x2 = {{1,2,3}, {1,2,3}};

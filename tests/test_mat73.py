@@ -36,6 +36,11 @@ class Testing(unittest.TestCase):
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
             self.__setattr__ ('testfile{}'.format(i), file)
+            
+        file_npt = 'testfile9.npt'
+        if not os.path.exists(file_npt):
+            file_npt = os.path.join('./tests', file_npt)
+        self.testfile_npt = file_npt
 
     def test_file1_noattr(self):
         """
@@ -337,13 +342,18 @@ class Testing(unittest.TestCase):
     def test_file7_empty_cell_array(self):
         data = mat73.loadmat(self.testfile7)
         
+    def test_can_load_other_extension(self):
+        with self.assertLogs(level='WARNING'):
+            data = mat73.loadmat(self.testfile_npt)
+
+        
     def test_load_specific_vars(self):
         for key in ['keys', ['keys']]:
             data = mat73.loadmat(self.testfile1, only_include=key)
             assert len(data)==1
             assert data['keys']=='must_not_overwrite'
        
-        with self.assertWarns(Warning):
+        with self.assertLogs(level='WARNING'):
             data = mat73.loadmat(self.testfile1, only_include='notpresent')
 
         data = mat73.loadmat(self.testfile1, only_include=['data', 'keys'])

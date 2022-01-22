@@ -1,17 +1,22 @@
 import setuptools
+
+__version__ = None # will be loaded in the next line
+exec(open('mat73/version.py').read())
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
     
+    
 setuptools.setup(
      name='mat73',  
-     version='0.55',
+     version=__version__,
      author="skjerns",
      author_email="nomail@nomail.com",
      description="Load MATLAB .mat 7.3 into Python native data types",
      long_description=long_description,
    long_description_content_type="text/markdown",
      url="https://github.com/skjerns/mat7.3",
-     download_url="https://github.com/skjerns/mat7.3/archive/v0.55.tar.gz",
+     download_url=f"https://github.com/skjerns/mat7.3/archive/v{__version__}.tar.gz",
      install_requires=['h5py', 'numpy'],
      license='MIT',
      packages=['mat73'],
@@ -21,3 +26,4 @@ setuptools.setup(
          "Operating System :: OS Independent",
      ],
  )
+
