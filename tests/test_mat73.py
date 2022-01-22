@@ -36,10 +36,11 @@ class Testing(unittest.TestCase):
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
             self.__setattr__ ('testfile{}'.format(i), file)
-        npt_file = 'testfile1.npt'
-        if not os.path.exists(npt_file):
-            npt_file = os.path.join('./tests', npt_file)
-        self.testfile_npt = npt_file
+            
+        file_npt = 'testfile9.npt'
+        if not os.path.exists(file_npt):
+            file_npt = os.path.join('./tests', file_npt)
+        self.testfile_npt = file_npt
 
     def test_file1_noattr(self):
         """
