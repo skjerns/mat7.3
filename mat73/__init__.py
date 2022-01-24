@@ -44,29 +44,67 @@ def print_tree(node):
     
     
 class HDF5Encoder():
-    def __init__(self, hdf5,  on_error='raise', verbose=True):
+    
+    def __init__(self, on_error='raise', verbose=True):
         assert on_error in ['raise', 'ignore'], \
             'on_error must be either "raise" or "ignore"'
         self.verbose = verbose
         self.on_error = on_error
-        self.hdf5 = hdf5
-        self.refs = hdf5.create_group('#refs#')
+        self.dtypes = {'float32':'single',
+                       'float64':'double'}
      
         
     def pack_mat(self, obj, parent):
-        if isinstance(obj, np.ndarray):
-            pass
+        if isinstance(obj,  h5py.File):
+            self.refs = parent.create_group('#refs#')
+            self.h5_file = parent
+        
+        attrs = {}
+        
+        if isinstance(obj, (bool, float, int, bool, complex)):
+            dataset = parent.create_dataset('array', data=obj)
+            attrs['MATLAB_class'] = type(obj).__name__
+
+        elif isinstance(obj, type(None)):
+            dataset = parent.create_dataset('array', data='')
+            attrs['MATLAB_class'] = 'canonical empty'
+            # attrs['MATLAB_empty'] = 
+
+        elif isinstance(obj, np.ndarray):
+            dataset = parent.create_dataset('array', data=obj)
+            attrs['MATLAB_class'] = obj.dtype.name
+            
         elif isinstance(obj, dict):
-            pass
+            for key, val in obj.items():
+                group = parent.create_group(key)
+                dataset = self.pack_mat(val, group)
+                attrs['MATLAB_class'] = 'cell'
+                
         elif isinstance(obj, list):
             pass
+        
         elif isinstance(obj, set):
-            pass
+            dataset = parent.create_dataset('set', data='str')
+            attrs['MATLAB_class'] = 'set'
+            
+        elif isinstance(obj, str):
+            dataset = parent.create_dataset('str', data=obj)
+            attrs['MATLAB_class'] = 'char'
+
         else:
             if self.on_error=='raise':
-                raise TypeError(f'Unknown type "{type(obj)}"')
+                raise TypeError(f'Cannot convert type "{type(obj)}", try '
+                                  'converting to built-in or array type before')
+        if 'dataset' in locals():
+            print(attrs)
+            # write all MATLAB attributes to file
+            
+            for key, val in attrs.items():
+                try:
+                    dataset.attrs[key] =  self.dtypes.get(val, val)
+                except:
+                    print(f'cant convert: {key} {val} for {obj}')
         
-
 class HDF5Decoder():
     def __init__(self, verbose=True, use_attrdict=False,
                  only_include=None):
@@ -325,19 +363,22 @@ def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
             
 def savemat(obj, filename, on_error='raise', verbose=True):
     if os.path.isfile(filename):
-        raise OSError(17, 'File already exists, no overwrite')
+        os.remove(filename)
+        # raise OSError(17, 'File already exists, no overwrite')
         
     encoder = HDF5Encoder(on_error=on_error, verbose=verbose)
     
     with h5py.File(filename, 'w') as hdf5:
         encoder.pack_mat(obj, hdf5)
         
-    raise NotImplementedError
+    # raise NotImplementedError
 
     
 if __name__=='__main__':
     # d = loadmat('../tests/testfile5.mat', use_attrdict=True)
 
 
-    file = '../tests/testfile8.mat'
+    file = '../tests/testfile1.mat'
     data = loadmat(file)
+    
+    savemat(data, 'test.mat')
