@@ -31,6 +31,8 @@ data.string_ = 'tasdfasdf'
 data.struct_ = struct('test', [1,2,3,4])
 data.struct2_ = struct('type',{'big','little'},'color','red','x',{single([1.1,1.2,0.3;2,3,4]), double([1.1,1.2,0.3])})
 data.structarr_ = struct('f1', {'some text'; [10,20,30]; magic(5)}, 'f2', {'v1'; 'v2'; 'v3';});
+%data.table_ = table([10;20;30;40], ['a';'b';'c';'d'])
+%data.table_empty_ = table()
 
 secondvar = [1,2,3,4]
 

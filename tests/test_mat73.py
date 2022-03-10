@@ -51,7 +51,7 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==29
+        assert len(data)==31
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -122,7 +122,7 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==29
+        assert len(data)==31
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -183,7 +183,7 @@ class Testing(unittest.TestCase):
         data = d.data
 
         assert len(d)==3
-        assert len(data)==29
+        assert len(data)==31
         assert data.arr_two_three.shape==(3,2)
         np.testing.assert_allclose(d.secondvar, [1,2,3,4])
         np.testing.assert_array_equal(data.arr_bool, np.array([True,True,False]))
@@ -358,7 +358,7 @@ class Testing(unittest.TestCase):
 
         data = mat73.loadmat(self.testfile1, only_include=['data', 'keys'])
         assert len(data)==2
-        assert len(data['data'])==29
+        assert len(data['data'])==31
         assert len(data['data']['cell_'])==7
         
         # check if loading times are faster, should be the case.

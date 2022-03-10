@@ -76,7 +76,7 @@ class HDF5Decoder():
         
 
     def mat2dict(self, hdf5):
-        
+        self.root = hdf5
         if '#refs#' in hdf5: 
             self.refs = hdf5['#refs#']
         d = self._dict_class()
@@ -206,6 +206,7 @@ class HDF5Decoder():
                 # some weird style MATLAB have no refs, but direct floats or int
                 if isinstance(ref, Iterable):
                     for r in ref:
+                        print(ref, r)
                         entry = self.unpack_mat(self.refs.get(r), depth+1)
                         row.append(entry)
                 else:
@@ -215,7 +216,9 @@ class HDF5Decoder():
             if len(cell)==1: # singular cells are interpreted as int/float
                 cell = cell[0]
             return cell
-
+        elif mtype=='table':
+            print(dataset)
+            return None
         elif mtype=='empty':
             dims = [x for x in dataset]
             return empty(*dims)
@@ -306,5 +309,5 @@ if __name__=='__main__':
     # d = loadmat('../tests/testfile5.mat', use_attrdict=True)
 
 
-    file = '../tests/testfile8.mat'
+    file = '../tests/testfile1.mat'
     data = loadmat(file)
