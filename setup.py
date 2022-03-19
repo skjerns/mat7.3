@@ -12,7 +12,7 @@ setuptools.setup(
      version=__version__,
      author="skjerns",
      author_email="nomail@nomail.com",
-     description="Load MATLAB .mat 7.3 into Python native data types",
+     description="Load MATLAB .mat 7.3 into Python native data types (via h5/hd5/hdf5/h5py)",
      long_description=long_description,
    long_description_content_type="text/markdown",
      url="https://github.com/skjerns/mat7.3",
