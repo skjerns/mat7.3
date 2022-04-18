@@ -29,7 +29,9 @@ data_dict = mat73.loadmat('data.mat', use_attrdict=True)
 struct = data_dict['structure'] # assuming a structure was saved in the .mat
 struct[0].var1 == struct[0]['var1'] # it's the same!
 ```
+
 You can also specifiy to only load a specific variable or variable tree, useful to reduce loading times
+
 ```Python
 data_dict = mat73.loadmat('data.mat', only_include='structure') 
 struct = data_dict['structure'] # now only structure is loaded and nothing else
@@ -70,6 +72,7 @@ The following MATLAB datatypes can be loaded
 | cell                     | list of lists     |
 | canonical empty          | []                |
 | missing                  | None              |
+| sparse                   | scipy.sparse.csc  |
 | Other (ie Datetime, ...) | Not supported     |
 
 ## Short-comings
