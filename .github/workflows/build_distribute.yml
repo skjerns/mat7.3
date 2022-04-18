@@ -24,7 +24,7 @@ jobs:
         pip install setuptools wheel twine
     - name: Run tests once
       run: |
-        pip install flake8 pytest
+        pip install flake8 pytest scipy
         pip install -e .
         pip install numpy h5py
     - name: Test with pytest

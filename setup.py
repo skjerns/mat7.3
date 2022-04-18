@@ -18,6 +18,7 @@ setuptools.setup(
      url="https://github.com/skjerns/mat7.3",
      download_url=f"https://github.com/skjerns/mat7.3/archive/v{__version__}.tar.gz",
      install_requires=['h5py', 'numpy'],
+     tests_require=['scipy'],
      license='MIT',
      packages=['mat73'],
      classifiers=[
