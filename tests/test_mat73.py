@@ -37,10 +37,11 @@ class Testing(unittest.TestCase):
                 file = os.path.join('./tests', file)
             self.__setattr__ ('testfile{}'.format(i), file)
             
-        file_npt = 'testfile9.npt'
-        if not os.path.exists(file_npt):
-            file_npt = os.path.join('./tests', file_npt)
-        self.testfile_npt = file_npt
+        other_testfiles = ['testfile9.npt', 'radiocell.mat', 'radiotable.mat']
+        for i, file in enumerate(other_testfiles):
+            if not os.path.exists(other_testfiles):
+                file = os.path.join('./tests', file)
+            self.__setattr__ ('testfile{}'.format(i), file)
 
     def test_file1_noattr(self):
         """
@@ -51,7 +52,7 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==31
+        assert len(data)==29
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -122,7 +123,7 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==31
+        assert len(data)==29
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -183,7 +184,7 @@ class Testing(unittest.TestCase):
         data = d.data
 
         assert len(d)==3
-        assert len(data)==31
+        assert len(data)==29
         assert data.arr_two_three.shape==(3,2)
         np.testing.assert_allclose(d.secondvar, [1,2,3,4])
         np.testing.assert_array_equal(data.arr_bool, np.array([True,True,False]))
@@ -358,7 +359,7 @@ class Testing(unittest.TestCase):
 
         data = mat73.loadmat(self.testfile1, only_include=['data', 'keys'])
         assert len(data)==2
-        assert len(data['data'])==31
+        assert len(data['data'])==29
         assert len(data['data']['cell_'])==7
         
         # check if loading times are faster, should be the case.
@@ -370,7 +371,8 @@ class Testing(unittest.TestCase):
         elapsed2 = time.time()-start
         assert elapsed2<elapsed1, 'loading specific var was not faster'
         
-
+    def test_load_table(self):
+        
 
 if __name__ == '__main__':
 

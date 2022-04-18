@@ -309,5 +309,5 @@ if __name__=='__main__':
     # d = loadmat('../tests/testfile5.mat', use_attrdict=True)
 
 
-    file = '../tests/testfile1.mat'
+    file = '../tests/radiotable.mat'
     data = loadmat(file)
