@@ -26,6 +26,8 @@ except:
     name = 'unknown'
     message = 'no msg'
 
+EXPECTED_VARS_FILE1 = 30
+
 print(f'#### Installed version: mat73-{version} on {branch}({name}) "{message}" ####')
 
 class Testing(unittest.TestCase):
@@ -51,7 +53,7 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==29
+        assert len(data)==EXPECTED_VARS_FILE1
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -108,6 +110,11 @@ class Testing(unittest.TestCase):
         assert data['structarr_'][1]['f2'] == ['v2']
         assert data['structarr_'][2]['f2'] == ['v3']
         assert d['keys'] == 'must_not_overwrite'
+        sparse = data['sparse_'].toarray()
+        assert sparse[1,4] == 6
+        assert sparse[3,7] == 7
+        assert (sparse!=0).sum()==2
+
 
         with self.assertRaises(AttributeError):
             d.structarr_
@@ -122,7 +129,7 @@ class Testing(unittest.TestCase):
         
         assert len(d)==3
         assert len(d.keys())==3
-        assert len(data)==29
+        assert len(data)==EXPECTED_VARS_FILE1
         assert data['arr_two_three'].shape==(3,2)
         np.testing.assert_allclose(d['secondvar'], [1,2,3,4])
         np.testing.assert_array_equal(data['arr_bool'], np.array([True,True,False]))
@@ -183,7 +190,7 @@ class Testing(unittest.TestCase):
         data = d.data
 
         assert len(d)==3
-        assert len(data)==29
+        assert len(data)==EXPECTED_VARS_FILE1
         assert data.arr_two_three.shape==(3,2)
         np.testing.assert_allclose(d.secondvar, [1,2,3,4])
         np.testing.assert_array_equal(data.arr_bool, np.array([True,True,False]))
@@ -358,7 +365,7 @@ class Testing(unittest.TestCase):
 
         data = mat73.loadmat(self.testfile1, only_include=['data', 'keys'])
         assert len(data)==2
-        assert len(data['data'])==29
+        assert len(data['data'])==EXPECTED_VARS_FILE1
         assert len(data['data']['cell_'])==7
         
         # check if loading times are faster, should be the case.
