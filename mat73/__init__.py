@@ -122,7 +122,31 @@ class HDF5Decoder():
                         MATLAB_class = MATLAB_class.decode()
                 unpacked = self.unpack_mat(elem, depth=depth+1, 
                                            MATLAB_class=MATLAB_class)
-                if MATLAB_class=='struct' and len(elem)>1 and \
+                # sparse elements need to be loaded separately
+                # see https://github.com/skjerns/mat7.3/issues/28
+                if 'MATLAB_sparse' in elem.attrs:
+                    try:
+                        from scipy.sparse import csc_matrix
+                        data = unpacked['data']
+                        row_ind = unpacked['ir']
+                        col_ind = unpacked['jc']                    
+                        n_rows = elem.attrs['MATLAB_sparse']
+                        n_cols = len(col_ind) - 1
+                        unpacked = csc_matrix((data, row_ind, col_ind), shape=(n_rows, n_cols))
+                    except ModuleNotFoundError:
+                        logging.error(f'`scipy` not installed. To load the sparse matrix'
+                                      f' `{elem.name}`,'
+                                      ' you need to have scipy installed. Please install'
+                                      ' via `pip install scipy`')
+                    except DeprecationWarning:
+                        logging.error(f'Tried loading the sparse matrix `{elem.name}`'
+                                      ' with scipy, but'
+                                      ' the interface has been deprecated. Please'
+                                      ' raise this error as an issue on GitHub:'
+                                      ' https://github.com/skjerns/mat7.3/issues')
+                        
+
+                elif MATLAB_class=='struct' and len(elem)>1 and \
                 isinstance(unpacked, dict):
                     values = unpacked.values()
                     # we can only pack them together in MATLAB style if
@@ -184,7 +208,6 @@ class HDF5Decoder():
                 logging.error(message)
             return None
 
-        # if has
         known_cls = ['cell', 'char', 'bool', 'logical', 'double', 'single', 
                      'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16',
                      'uint32', 'uint64']
@@ -303,8 +326,9 @@ def savemat(filename, verbose=True):
 
     
 if __name__=='__main__':
-    # d = loadmat('../tests/testfile5.mat', use_attrdict=True)
+    # for testing / debugging
+    d = loadmat('../tests/testfile1.mat')
 
 
-    file = '../tests/testfile8.mat'
-    data = loadmat(file)
+    # file = '../tests/testfile8.mat'
+    # data = loadmat(file)
