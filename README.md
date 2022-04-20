@@ -81,3 +81,4 @@ The following MATLAB datatypes can be loaded
 - Proprietary MATLAB types (e.g `datetime`, `duriation`, etc) are not supported. If someone tells me how to convert them, I'll implement that
 - For now, you can't save anything back to the .mat. It's a bit more difficult than expected, so it's not on the roadmap for now
 - See also [hdf5storage](https://github.com/frejanordsiek/hdf5storage), which can indeed be used for saving .mat, but has less features for loading
+- See also [pymatreader](https://gitlab.com/obob/pymatreader/) which has a (maybe even better) implementation of loading MAT files, even for older ones
