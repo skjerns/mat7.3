@@ -19,11 +19,11 @@ setuptools.setup(
      download_url=f"https://github.com/skjerns/mat7.3/archive/v{__version__}.tar.gz",
      install_requires=['h5py', 'numpy'],
      tests_require=['scipy'],
-     license='MIT',
+     license='GPL3',
      packages=['mat73'],
      classifiers=[
          "Programming Language :: Python :: 3",
-         "License :: OSI Approved :: MIT License",
+         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
          "Operating System :: OS Independent",
      ],
  )
