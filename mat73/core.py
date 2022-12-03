@@ -144,6 +144,10 @@ class HDF5Decoder():
                                       ' the interface has been deprecated. Please'
                                       ' raise this error as an issue on GitHub:'
                                       ' https://github.com/skjerns/mat7.3/issues')
+                    except KeyError as e:
+                        logging.error(f'Tried loading the sparse matrix `{elem.name}`'
+                                      ' but something went wrong: {e}\n{e.__traceback__}')
+                        raise e
                         
 
                 elif MATLAB_class=='struct' and len(elem)>1 and \
