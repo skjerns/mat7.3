@@ -33,12 +33,13 @@ print(f'#### Installed version: mat73-{version} on {branch}({name}) "{message}" 
 class Testing(unittest.TestCase):
 
     def setUp(self):
-        for i in range(1,9):
+        """make links to test files and make sure they are present"""
+        for i in range(1, 9):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
             self.__setattr__ ('testfile{}'.format(i), file)
-            
+
         file_npt = 'testfile9.npt'
         if not os.path.exists(file_npt):
             file_npt = os.path.join('./tests', file_npt)
@@ -50,7 +51,7 @@ class Testing(unittest.TestCase):
         """
         d = mat73.loadmat(self.testfile1, use_attrdict=False)
         data = d['data']
-        
+
         assert len(d)==3
         assert len(d.keys())==3
         assert len(data)==EXPECTED_VARS_FILE1
@@ -84,11 +85,11 @@ class Testing(unittest.TestCase):
         assert data['int16_']==16
         assert data['int16_'].dtype==np.int16
         assert data['int32_']==1115
-        assert data['int32_'].dtype==np.int32  
+        assert data['int32_'].dtype==np.int32
         assert data['int64_']==65243
-        assert data['int64_'].dtype==np.int64 
+        assert data['int64_'].dtype==np.int64
         assert data['int8_']==2
-        assert data['int8_'].dtype==np.int8 
+        assert data['int8_'].dtype==np.int8
         np.testing.assert_array_equal(data['nan_'], np.nan)
         assert data['nan_'].dtype==np.float64
         assert data['single_']==np.array(0.1, dtype=np.float32)
@@ -99,7 +100,7 @@ class Testing(unittest.TestCase):
         assert data['uint16_']==12
         assert data['uint16_'].dtype==np.uint16
         assert data['uint32_']==5452
-        assert data['uint32_'].dtype==np.uint32       
+        assert data['uint32_'].dtype==np.uint32
         assert data['uint64_']==32563
         assert data['uint64_'].dtype==np.uint64
         assert len(data['struct_'])==1
@@ -126,7 +127,7 @@ class Testing(unittest.TestCase):
         """
         d = mat73.loadmat(self.testfile1, use_attrdict=True)
         data = d['data']
-        
+
         assert len(d)==3
         assert len(d.keys())==3
         assert len(data)==EXPECTED_VARS_FILE1
@@ -159,11 +160,11 @@ class Testing(unittest.TestCase):
         assert data['int16_']==16
         assert data['int16_'].dtype==np.int16
         assert data['int32_']==1115
-        assert data['int32_'].dtype==np.int32  
+        assert data['int32_'].dtype==np.int32
         assert data['int64_']==65243
-        assert data['int64_'].dtype==np.int64 
+        assert data['int64_'].dtype==np.int64
         assert data['int8_']==2
-        assert data['int8_'].dtype==np.int8 
+        assert data['int8_'].dtype==np.int8
         np.testing.assert_array_equal(data['nan_'], np.nan)
         assert data['nan_'].dtype==np.float64
         assert data['single_']==np.array(0.1, dtype=np.float32)
@@ -174,7 +175,7 @@ class Testing(unittest.TestCase):
         assert data['uint16_']==12
         assert data['uint16_'].dtype==np.uint16
         assert data['uint32_']==5452
-        assert data['uint32_'].dtype==np.uint32       
+        assert data['uint32_'].dtype==np.uint32
         assert data['uint64_']==32563
         assert data['uint64_'].dtype==np.uint64
         assert len(data['struct_'])==1
@@ -220,11 +221,11 @@ class Testing(unittest.TestCase):
         assert data.int16_==16
         assert data.int16_.dtype==np.int16
         assert data.int32_==1115
-        assert data.int32_.dtype==np.int32  
+        assert data.int32_.dtype==np.int32
         assert data.int64_==65243
-        assert data.int64_.dtype==np.int64 
+        assert data.int64_.dtype==np.int64
         assert data.int8_==2
-        assert data.int8_.dtype==np.int8 
+        assert data.int8_.dtype==np.int8
         np.testing.assert_array_equal(data.nan_, np.nan)
         assert data.nan_.dtype==np.float64
         assert data.single_==np.array(0.1, dtype=np.float32)
@@ -235,7 +236,7 @@ class Testing(unittest.TestCase):
         assert data.uint16_==12
         assert data.uint16_.dtype==np.uint16
         assert data.uint32_==5452
-        assert data.uint32_.dtype==np.uint32       
+        assert data.uint32_.dtype==np.uint32
         assert data.uint64_==32563
         assert data.uint64_.dtype==np.uint64
         assert len(data.struct_)==1
@@ -256,13 +257,13 @@ class Testing(unittest.TestCase):
         """
         d = mat73.loadmat(self.testfile2)
         raw1 = d['raw1']
-        assert raw1['label'] == ['']*5
-        assert raw1['speakerType'] == ['main']*5
+        self.assertEqual(raw1['label'], ['']*5)
+        self.assertEqual(raw1['speakerType'],['main']*5)
         np.testing.assert_array_equal(raw1['channel'],[1,2,3,4,5])
         np.testing.assert_allclose(raw1['measGain'],[-1.0160217,-0.70729065,-1.2158508,0.68839645,2.464653])
         for i in range(5):
             assert np.isclose(np.sum(raw1['h'][i]),-0.0007341067459898744)
-    
+
         np.testing.assert_array_almost_equal(raw1['HSmooth'][0][2], [ 0.001139-4.233492e-04j,  0.00068 +8.927040e-06j,
         0.002382-7.647651e-04j, -0.012677+3.767829e-03j])
 
@@ -273,8 +274,8 @@ class Testing(unittest.TestCase):
         """
         d = mat73.loadmat(self.testfile3)
         raw1 = d['raw1']
-        assert raw1['label'] == ['']*5
-        assert raw1['speakerType'] == ['main']*5
+        self.assertEqual(raw1['label'], ['']*5)
+        self.assertEqual(raw1['speakerType'], ['main']*5)
         np.testing.assert_array_equal(raw1['channel'],[1,2,3,4,5])
         np.testing.assert_allclose(raw1['measGain'],[-1.0160217,-0.70729065,-1.2158508,0.68839645,2.464653])
         for i in range(5):
@@ -348,18 +349,18 @@ class Testing(unittest.TestCase):
 
     def test_file7_empty_cell_array(self):
         data = mat73.loadmat(self.testfile7)
-        
+
     def test_can_load_other_extension(self):
         with self.assertLogs(level='WARNING'):
             data = mat73.loadmat(self.testfile_npt)
 
-        
+
     def test_load_specific_vars(self):
         for key in ['keys', ['keys']]:
             data = mat73.loadmat(self.testfile1, only_include=key)
             assert len(data)==1
             assert data['keys']=='must_not_overwrite'
-       
+
         with self.assertLogs(level='WARNING'):
             data = mat73.loadmat(self.testfile1, only_include='notpresent')
 
@@ -367,7 +368,7 @@ class Testing(unittest.TestCase):
         assert len(data)==2
         assert len(data['data'])==EXPECTED_VARS_FILE1
         assert len(data['data']['cell_'])==7
-        
+
         # check if loading times are faster, should be the case.
         start = time.time()
         data = mat73.loadmat(self.testfile4)
@@ -376,14 +377,16 @@ class Testing(unittest.TestCase):
         data = mat73.loadmat(self.testfile4, only_include='Res/HRV/Param/use_custom_print_command')
         elapsed2 = time.time()-start
         assert elapsed2<elapsed1, 'loading specific var was not faster'
-        
+
+    def test_file10_nullchars(self):
+        """test if null chars are retained in char arrays"""
+        data = mat73.loadmat(self.testfile8)
+        self.assertEqual(len(data['char_array']), 7, 'not all elements loaded')
+        self.assertEqual(len(data['char_string']), 11, 'not all elements loaded')
+        self.assertEqual(data['char_array'], '\x01\x02\x03\x00\x04\x05\x06')
+
 
 
 if __name__ == '__main__':
 
     unittest.main()
-
-
-
-
-
