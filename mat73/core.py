@@ -290,12 +290,12 @@ class HDF5Decoder():
             return None
 
 
-def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
+def loadmat(file, use_attrdict=False, only_include=None, verbose=True):
     """
     Loads a MATLAB 7.3 .mat file, which is actually a
     HDF5 file with some custom matlab annotations inside
 
-    :param filename: A string pointing to the file
+    :param file: filename or file-like object to load from
     :param use_attrdict: make it possible to access structs like in MATLAB
                          using struct.varname instead of struct['varname']
                          WARNING: builtin dict functions cannot be overwritten,
@@ -309,21 +309,24 @@ def loadmat(filename, use_attrdict=False, only_include=None, verbose=True):
                          struct, 'struct/var' will load only ['struct']['var']
     :returns: A dictionary with the matlab variables loaded
     """
-    assert os.path.isfile(filename), '{} does not exist'.format(filename)
     decoder = HDF5Decoder(verbose=verbose, use_attrdict=use_attrdict,
                           only_include=only_include)
 
-    ext = os.path.splitext(filename)[1].lower()
-    if ext!='.mat':
-        logging.warning('Can only load MATLAB .mat file, this file type might '
-                        f'be unsupported: {filename}')
+    if isinstance(file, str):
+        ext = os.path.splitext(file)[1].lower()
+        if ext!='.mat':
+            logging.warning('Can only load MATLAB .mat file, this file type might '
+                            f'be unsupported: {file}')
+
     try:
-        with h5py.File(filename, 'r') as hdf5:
+        with h5py.File(file, 'r') as hdf5:
             dictionary = decoder.mat2dict(hdf5)
         return dictionary
+    except FileNotFoundError:
+        raise
     except OSError:
-        raise TypeError('{} is not a MATLAB 7.3 file. '\
-                        'Load with scipy.io.loadmat() instead.'.format(filename))
+        raise TypeError(f'{file} is not a MATLAB 7.3 file. '
+                        'Load with scipy.io.loadmat() instead.')
 
 
 def savemat(filename, verbose=True):
