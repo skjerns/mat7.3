@@ -45,10 +45,21 @@ class Testing(unittest.TestCase):
             file_npt = os.path.join('./tests', file_npt)
         self.testfile_npt = file_npt
 
+    def test_file_obj_loading(self):
+        """test for loading as file object and string filename """
+        d = mat73.loadmat(self.testfile1, use_attrdict=False)
+        data = d['data']
+        assert len(d)==3
+        assert len(d.keys())==3
+        with open(self.testfile1, 'rb') as f:
+            d = mat73.loadmat(f, use_attrdict=False)
+            data = d['data']
+            assert len(d)==3
+            assert len(d.keys())==3      
+
+    
     def test_file1_noattr(self):
-        """
-        Test each default MATLAB type loads correctl
-        """
+        """Test each default MATLAB type loads correctly"""
         d = mat73.loadmat(self.testfile1, use_attrdict=False)
         data = d['data']
 
