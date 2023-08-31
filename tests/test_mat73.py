@@ -34,7 +34,7 @@ class Testing(unittest.TestCase):
 
     def setUp(self):
         """make links to test files and make sure they are present"""
-        for i in range(1, 9):
+        for i in range(1, 12):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -55,9 +55,9 @@ class Testing(unittest.TestCase):
             d = mat73.loadmat(f, use_attrdict=False)
             data = d['data']
             assert len(d)==3
-            assert len(d.keys())==3      
+            assert len(d.keys())==3
 
-    
+
     def test_file1_noattr(self):
         """Test each default MATLAB type loads correctly"""
         d = mat73.loadmat(self.testfile1, use_attrdict=False)
@@ -396,7 +396,23 @@ class Testing(unittest.TestCase):
         self.assertEqual(len(data['char_string']), 11, 'not all elements loaded')
         self.assertEqual(data['char_array'], '\x01\x02\x03\x00\x04\x05\x06')
 
+    def test_file11_specificvars_cells(self):
+        """see if contents of cells are also loaded when using only_include"""
+        # check regular loading works
+        data = mat73.loadmat(self.testfile11)
+        assert len(data)==1
+        assert data['foo'][0]==1
+        assert data['foo'][1]==2
 
+        # load cells correctly
+        data = mat73.loadmat(self.testfile11, only_include=['foo'])
+        assert len(data)==1
+        assert data['foo'][0]==1
+        assert data['foo'][1]==2
+
+        # loading should be empty for non-existend var
+        data = mat73.loadmat(self.testfile11, only_include=['bar'])
+        assert len(data)==0
 
 if __name__ == '__main__':
 

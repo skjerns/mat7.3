@@ -46,15 +46,21 @@ class HDF5Decoder():
     def __init__(self, verbose=True, use_attrdict=False,
                  only_include=None):
 
+        # if only_include is a string, convert into a list
         if isinstance(only_include, str):
             only_include = [only_include]
+
+        # make sure all paths start with '/' and are not ending in '/'
         if only_include is not None:
             only_include = [s if s[0]=='/' else f'/{s}' for s in only_include]
             only_include = [s[:-1] if s[-1]=='/' else s for s in only_include]
+
         self.verbose = verbose
         self._dict_class = AttrDict if use_attrdict else dict
         self.refs = {} # this is used in case of matlab matrices
         self.only_include = only_include
+
+        # set a check if requested include_only var was actually found
         if only_include is not None:
             _vardict = dict(zip(only_include, [False]*len(only_include)))
             self._found_include_var = _vardict
@@ -97,7 +103,7 @@ class HDF5Decoder():
         return d
 
     # @profile
-    def unpack_mat(self, hdf5, depth=0, MATLAB_class=None):
+    def unpack_mat(self, hdf5, depth=0, MATLAB_class=None, force=False):
         """
         unpack a h5py entry: if it's a group expand,
         if it's a dataset convert
@@ -111,7 +117,7 @@ class HDF5Decoder():
 
             for key in hdf5:
                 elem   = hdf5[key]
-                if not self.is_included(elem):
+                if not self.is_included(elem) and not force:
                     continue
                 if 'MATLAB_class' in elem.attrs:
                     MATLAB_class = elem.attrs.get('MATLAB_class')
@@ -176,7 +182,7 @@ class HDF5Decoder():
 
             return d
         elif isinstance(hdf5, h5py._hl.dataset.Dataset):
-            if  self.is_included(hdf5):
+            if self.is_included(hdf5) or force:
                 return self.convert_mat(hdf5, depth, MATLAB_class=MATLAB_class)
         else:
             raise Exception(f'Unknown hdf5 type: {key}:{type(hdf5)}')
@@ -229,7 +235,8 @@ class HDF5Decoder():
                 # some weird style MATLAB have no refs, but direct floats or int
                 if isinstance(ref, Iterable):
                     for r in ref:
-                        entry = self.unpack_mat(self.refs.get(r), depth+1)
+                        # force=True because we want to load cell contents
+                        entry = self.unpack_mat(self.refs.get(r), depth+1, force=True)
                         row.append(entry)
                 else:
                     row = [ref]
@@ -335,7 +342,7 @@ def savemat(filename, verbose=True):
 
 if __name__=='__main__':
     # for testing / debugging
-    d = loadmat('../tests/testfile2.mat')
+    d = loadmat('../tests/testfile11.mat', only_include='foo')
 
 
     # file = '../tests/testfile8.mat'
