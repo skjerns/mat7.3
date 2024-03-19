@@ -112,17 +112,18 @@ class HDF5Decoder():
         """
         if depth==99:
             raise RecursionError("Maximum number of 99 recursions reached.")
-        # sparse elements need to be loaded separately
+
+        # sparse elements need to be loaded separately (recursion end)
         # see https://github.com/skjerns/mat7.3/issues/28
         if 'MATLAB_sparse' in hdf5.attrs:
             try:
                 from scipy.sparse import csc_matrix
-                data = unpacked['data']
-                row_ind = unpacked['ir']
-                col_ind = unpacked['jc']
+                data = hdf5['data']
+                row_ind = hdf5['ir']
+                col_ind = hdf5['jc']
                 n_rows = hdf5.attrs['MATLAB_sparse']
                 n_cols = len(col_ind) - 1
-                unpacked = csc_matrix((data, row_ind, col_ind), shape=(n_rows, n_cols))
+                return csc_matrix((data, row_ind, col_ind), shape=(n_rows, n_cols))
             except ModuleNotFoundError:
                 logging.error(f'`scipy` not installed. To load the sparse matrix'
                                 f' `{hdf5.name}`,'
@@ -138,6 +139,7 @@ class HDF5Decoder():
                 logging.error(f'Tried loading the sparse matrix `{hdf5.name}`'
                                 ' but something went wrong: {e}\n{e.__traceback__}')
                 raise e
+
         if isinstance(hdf5, (h5py._hl.group.Group)):
             d = self._dict_class()
 
