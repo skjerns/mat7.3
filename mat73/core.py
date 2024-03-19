@@ -112,6 +112,32 @@ class HDF5Decoder():
         """
         if depth==99:
             raise RecursionError("Maximum number of 99 recursions reached.")
+        # sparse elements need to be loaded separately
+        # see https://github.com/skjerns/mat7.3/issues/28
+        if 'MATLAB_sparse' in hdf5.attrs:
+            try:
+                from scipy.sparse import csc_matrix
+                data = unpacked['data']
+                row_ind = unpacked['ir']
+                col_ind = unpacked['jc']
+                n_rows = hdf5.attrs['MATLAB_sparse']
+                n_cols = len(col_ind) - 1
+                unpacked = csc_matrix((data, row_ind, col_ind), shape=(n_rows, n_cols))
+            except ModuleNotFoundError:
+                logging.error(f'`scipy` not installed. To load the sparse matrix'
+                                f' `{hdf5.name}`,'
+                                ' you need to have scipy installed. Please install'
+                                ' via `pip install scipy`')
+            except DeprecationWarning:
+                logging.error(f'Tried loading the sparse matrix `{hdf5.name}`'
+                                ' with scipy, but'
+                                ' the interface has been deprecated. Please'
+                                ' raise this error as an issue on GitHub:'
+                                ' https://github.com/skjerns/mat7.3/issues')
+            except KeyError as e:
+                logging.error(f'Tried loading the sparse matrix `{hdf5.name}`'
+                                ' but something went wrong: {e}\n{e.__traceback__}')
+                raise e
         if isinstance(hdf5, (h5py._hl.group.Group)):
             d = self._dict_class()
 
@@ -125,35 +151,9 @@ class HDF5Decoder():
                         MATLAB_class = MATLAB_class.decode()
                 unpacked = self.unpack_mat(elem, depth=depth+1,
                                            MATLAB_class=MATLAB_class)
-                # sparse elements need to be loaded separately
-                # see https://github.com/skjerns/mat7.3/issues/28
-                if 'MATLAB_sparse' in elem.attrs:
-                    try:
-                        from scipy.sparse import csc_matrix
-                        data = unpacked['data']
-                        row_ind = unpacked['ir']
-                        col_ind = unpacked['jc']
-                        n_rows = elem.attrs['MATLAB_sparse']
-                        n_cols = len(col_ind) - 1
-                        unpacked = csc_matrix((data, row_ind, col_ind), shape=(n_rows, n_cols))
-                    except ModuleNotFoundError:
-                        logging.error(f'`scipy` not installed. To load the sparse matrix'
-                                      f' `{elem.name}`,'
-                                      ' you need to have scipy installed. Please install'
-                                      ' via `pip install scipy`')
-                    except DeprecationWarning:
-                        logging.error(f'Tried loading the sparse matrix `{elem.name}`'
-                                      ' with scipy, but'
-                                      ' the interface has been deprecated. Please'
-                                      ' raise this error as an issue on GitHub:'
-                                      ' https://github.com/skjerns/mat7.3/issues')
-                    except KeyError as e:
-                        logging.error(f'Tried loading the sparse matrix `{elem.name}`'
-                                      ' but something went wrong: {e}\n{e.__traceback__}')
-                        raise e
 
 
-                elif MATLAB_class=='struct' and len(elem)>1 and \
+                if MATLAB_class=='struct' and len(elem)>1 and \
                 isinstance(unpacked, dict):
                     values = unpacked.values()
                     # we can only pack them together in MATLAB style if
