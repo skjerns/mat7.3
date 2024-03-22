@@ -34,7 +34,7 @@ class Testing(unittest.TestCase):
 
     def setUp(self):
         """make links to test files and make sure they are present"""
-        for i in range(1, 12):
+        for i in range(1, 13):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -413,6 +413,18 @@ class Testing(unittest.TestCase):
         # loading should be empty for non-existend var
         data = mat73.loadmat(self.testfile11, only_include=['bar'])
         assert len(data)==0
+
+    def test_file12_sparse_matrix_fix(self):
+        """some sparse matrices could not be loaded. check if it now works"""
+        # check regular loading works
+        import scipy
+        data = mat73.loadmat(self.testfile12)
+        struct_sparse = data['rec_img']['fwd_model']['stimulation']
+        sparse_type = scipy.sparse._csc.csc_matrix
+        assert isinstance(struct_sparse[0]['meas_pattern'], sparse_type)
+        assert isinstance(struct_sparse[0]['stim_pattern'], sparse_type)
+        assert isinstance(struct_sparse[0]['stimulation'], str)
+
 
 if __name__ == '__main__':
 
