@@ -420,7 +420,7 @@ class Testing(unittest.TestCase):
         import scipy
         data = mat73.loadmat(self.testfile12)
         struct_sparse = data['rec_img']['fwd_model']['stimulation']
-        sparse_type = scipy.sparse._csc.csc_matrix
+        sparse_type = scipy.sparse.csc_matrix
         assert isinstance(struct_sparse[0]['meas_pattern'], sparse_type)
         assert isinstance(struct_sparse[0]['stim_pattern'], sparse_type)
         assert isinstance(struct_sparse[0]['stimulation'], str)
