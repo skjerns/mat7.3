@@ -8,7 +8,7 @@ Starting with MATLAB 7.3, `.mat` files have been changed to store as custom `hdf
 This means they cannot be loaded by `scipy.io.loadmat` any longer and raise.
 
 ```Python
-NotImplementedError: Please use HDF reader for matlab v7.3 files
+NotImplementedError: Please use HDF reader for matlab v7.3 files, e.g. h5py
 ```
 
 ## Quickstart
