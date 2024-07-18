@@ -41,7 +41,9 @@ save('testfile1.mat','-v7.3')
 
 clear all
 
-%% second created file
+%% second created file for https://github.com/skjerns/mat7.3/pull/57
 
-data.x1 = {'test', 'asd'};
-data.x2 = {{1,2,3}, {1,2,3}};
+A = sparse([0 0 0; 0 0 0]);
+save('testfile13.mat','-v7.3')
+clear all
+%% 
