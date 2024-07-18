@@ -118,8 +118,13 @@ class HDF5Decoder():
         if 'MATLAB_sparse' in hdf5.attrs:
             try:
                 from scipy.sparse import csc_matrix
-                data = hdf5['data']
-                row_ind = hdf5['ir']
+                if 'data' in hdf5:
+                    data = hdf5['data']
+                    row_ind = hdf5['ir']
+                else:
+                    data = []
+                    row_ind = []
+                
                 col_ind = hdf5['jc']
                 n_rows = hdf5.attrs['MATLAB_sparse']
                 n_cols = len(col_ind) - 1
