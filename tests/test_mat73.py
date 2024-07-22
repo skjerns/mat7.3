@@ -34,7 +34,7 @@ class Testing(unittest.TestCase):
 
     def setUp(self):
         """make links to test files and make sure they are present"""
-        for i in range(1, 14):
+        for i in range(1, 15):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -438,6 +438,43 @@ class Testing(unittest.TestCase):
         assert (struct_sparse.toarray()==np.zeros([2,3])).all()
         assert struct_sparse.shape==(2, 3)
 
+
+    def test_file14_n_d_array_with_singular_axis(self):
+        """Test loading of n-D array with one dimension of size 1"""
+
+        # the array was created in Matlab like so:
+        # data = reshape(1:24, [3, 1, 4, 2]);
+
+        data = mat73.loadmat(self.testfile14)
+
+        # Assert that there's only one variable in the file
+        self.assertEqual(len(data), 1)
+        self.assertIn('data', data)
+
+        # Get the data array
+        arr = data['data']
+
+        # Assert the shape is correct (3 x 1 x 4 x 2)
+        self.assertEqual(arr.shape, (3, 1, 4, 2))
+
+        # Assert the data type
+        self.assertEqual(arr.dtype, np.float64)
+
+        # Check the contents of the array
+        # Create the expected data array in the correct structure
+        expected = np.zeros((3, 1, 4, 2))
+        expected[:, 0, 0, 0] = [1, 2, 3]
+        expected[:, 0, 1, 0] = [4, 5, 6]
+        expected[:, 0, 2, 0] = [7, 8, 9]
+        expected[:, 0, 3, 0] = [10, 11, 12]
+        expected[:, 0, 0, 1] = [13, 14, 15]
+        expected[:, 0, 1, 1] = [16, 17, 18]
+        expected[:, 0, 2, 1] = [19, 20, 21]
+        expected[:, 0, 3, 1] = [22, 23, 24]
+        np.testing.assert_array_equal(arr, expected)
+
+        # Test that the singular dimension is preserved
+        self.assertEqual(arr.shape[1], 1)
 
 if __name__ == '__main__':
 
