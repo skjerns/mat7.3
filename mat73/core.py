@@ -272,7 +272,7 @@ class HDF5Decoder():
             return bool(dataset)
 
         elif mtype=='logical':
-            arr = np.array(dataset, dtype=bool).T.squeeze()
+            arr = squeeze(np.array(dataset, dtype=bool).T)
             if arr.size==1: arr=bool(arr)
             return arr
 
@@ -287,13 +287,13 @@ class HDF5Decoder():
                 dtype = np.complex128
             arr = np.array(dataset)
             arr = (arr['real'] + arr['imag']*1j).astype(dtype)
-            return arr.T.squeeze()
+            return squeeze(arr.T)
 
         # if it is none of the above, we can convert to numpy array
         elif mtype in ('double', 'single', 'int8', 'int16', 'int32', 'int64',
                        'uint8', 'uint16', 'uint32', 'uint64'):
             arr = np.array(dataset, dtype=dataset.dtype)
-            return arr.T.squeeze()
+            return squeeze(arr.T)
         elif mtype=='missing':
             arr = None
         else:
@@ -303,6 +303,27 @@ class HDF5Decoder():
                 logging.error(message)
             return None
 
+
+def squeeze(arr):
+    # Assumption: "superfluous" singular dimensions come at the beginning or the end
+
+    shape = arr.shape
+    if len(shape) == 0:
+        return arr
+
+    # Remove leading dimensions of size 1
+    while len(shape) > 1 and shape[0] == 1:
+        shape = shape[1:]
+
+    # Remove trailing dimensions of size 1
+    while len(shape) > 1 and shape[-1] == 1:
+        shape = shape[:-1]
+
+    # If all remaining dimensions are of size 1, reduce to 0-dimensional
+    if len(shape) == 1 and shape[0] == 1:
+        shape = ()
+
+    return arr.reshape(shape)
 
 def loadmat(file, use_attrdict=False, only_include=None, verbose=True):
     """
