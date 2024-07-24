@@ -15,6 +15,7 @@ try:
     version = pkg_resources.get_distribution('mat73').version
 except:
     version = '0.00'
+    
 try:
     repo = Repository('.')
     head = repo.head
@@ -34,7 +35,7 @@ class Testing(unittest.TestCase):
 
     def setUp(self):
         """make links to test files and make sure they are present"""
-        for i in range(1, 15):
+        for i in range(1, 16):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -475,6 +476,39 @@ class Testing(unittest.TestCase):
 
         # Test that the singular dimension is preserved
         self.assertEqual(arr.shape[1], 1)
+
+
+
+    def test_file15_strip(self):
+        """Test loading of n-D array with one dimension of size 1"""
+
+        # the array was created in Matlab like so:
+        # data = reshape(1:24, [3, 1, 4, 2]);
+
+        data = mat73.loadmat(self.testfile15)
+
+
+        self.assertEqual(data['x_0'], None)
+        self.assertEqual(data['x_1_0'], None)
+        self.assertEqual(data['x_0_1'], None)
+        self.assertEqual(data['x_0_10'], None)
+        self.assertEqual(data['x_10_0'], None)
+
+        expected = {'x_1' : (),
+                    'x_10' : (10,),
+                    'x_1_1': (),
+                    'x_1_10': (10,),
+                    'x_10_1': (10,),
+                    'x_10_10': (10, 10),
+                    'x_1_1_10_1_1': (1, 1, 10),
+                    'x_10_1_1_10': (10, 1, 1, 10),
+                    }
+        
+        
+        for var, shape in expected.items():
+            self.assertEqual(data[var].shape, shape)
+            self.assertEqual(data[var].ndim, len(shape))
+
 
 if __name__ == '__main__':
 
