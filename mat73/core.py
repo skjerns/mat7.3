@@ -305,25 +305,14 @@ class HDF5Decoder():
 
 
 def squeeze(arr):
-    # Assumption: "superfluous" singular dimensions come at the beginning or the end
-
-    shape = arr.shape
-    if len(shape) == 0:
-        return arr
-
-    # Remove leading dimensions of size 1
-    while len(shape) > 1 and shape[0] == 1:
-        shape = shape[1:]
-
-    # Remove trailing dimensions of size 1
-    while len(shape) > 1 and shape[-1] == 1:
-        shape = shape[:-1]
-
-    # If all remaining dimensions are of size 1, reduce to 0-dimensional
-    if len(shape) == 1 and shape[0] == 1:
-        shape = ()
-
-    return arr.reshape(shape)
+    """Vectors are saved as 2D matrices in MATLAB, however in numpy
+    there is no distinction between a column and a row vector. 
+    Therefore, remove superfluous dimensions if the array is 2D and
+    one of the dimensions is singular"""
+    if arr.ndim==2 and 1 in arr.shape:
+        return arr.reshape([x for x in arr.shape if x>1])
+    return arr
+    
 
 def loadmat(file, use_attrdict=False, only_include=None, verbose=True):
     """

@@ -46,4 +46,22 @@ clear all
 A = sparse([0 0 0; 0 0 0]);
 save('testfile13.mat','-v7.3')
 clear all
-%% 
+%% third file: create a file to test all kind of empty dimensions that migh pop up
+
+x_0 = rand(0)
+x_1 = rand(1)
+x_10 = 1:10
+x_1_0 = rand(1, 0)
+x_0_1 = rand(0, 1)
+x_1_1 = rand(1, 1)
+x_0_10 = rand(0, 10)
+x_1_10 = rand(1, 10)
+x_10_0 = rand(10, 0)
+x_10_1 = rand(10, 1)
+x_10_10 = rand(10, 10)
+x_1_1_10_1_1 = rand(1, 1, 10, 1, 1)
+x_10_1_1_10 = rand(10, 1, 1, 10)
+save('testfile15.mat','-v7.3')
+clear all
+
+
