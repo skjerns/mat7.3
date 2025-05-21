@@ -265,7 +265,11 @@ class HDF5Decoder():
 
         elif mtype=='char':
             string_array = np.ravel(dataset)
-            string_array = ''.join([chr(x) for x in string_array])
+            if dataset.shape[1] > 1:
+                # MATLAB uses column-major order, so we need to transpose
+                string_array = [''.join([chr(x) for x in string_array][n::dataset.shape[1]]) for n in range(dataset.shape[1])]
+            else:
+                string_array = ''.join([chr(x) for x in string_array])
             return string_array
 
         elif mtype=='bool':

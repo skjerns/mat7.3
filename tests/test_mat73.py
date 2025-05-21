@@ -35,7 +35,7 @@ class Testing(unittest.TestCase):
 
     def setUp(self):
         """make links to test files and make sure they are present"""
-        for i in range(1, 16):
+        for i in range(1, 17):
             file = 'testfile{}.mat'.format(i)
             if not os.path.exists(file):
                 file = os.path.join('./tests', file)
@@ -509,6 +509,20 @@ class Testing(unittest.TestCase):
             self.assertEqual(data[var].shape, shape)
             self.assertEqual(data[var].ndim, len(shape))
 
+    def test_file16_2d_char_array(self):
+        """Test loading of 2D char array"""
+        # the matlab array has shape (6 X 57)
+
+        data = mat73.loadmat(self.testfile16)
+
+        expected = ['PSTH tensor for image sequences (averaged across frames):',
+                    'dimension 1: 2 scales (zoom1x, zoom2x)                   ',
+                    'dimension 2: 3 category (natural, synthetic, contrast)   ',
+                    'dimension 3: 10 movies                                   ',
+                    'dimension 4: sorted units                                ',
+                    'dimension 5: PSTH time bins                              ']
+
+        self.assertEqual(data['char_arr_2d'], expected)
 
 if __name__ == '__main__':
 
