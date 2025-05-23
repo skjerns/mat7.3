@@ -15,7 +15,7 @@ try:
     version = pkg_resources.get_distribution('mat73').version
 except:
     version = '0.00'
-    
+
 try:
     repo = Repository('.')
     head = repo.head
@@ -390,7 +390,7 @@ class Testing(unittest.TestCase):
         elapsed2 = time.time()-start
         assert elapsed2<elapsed1, 'loading specific var was not faster'
 
-    def test_file10_nullchars(self):
+    def test_file8_nullchars(self):
         """test if null chars are retained in char arrays"""
         data = mat73.loadmat(self.testfile8)
         self.assertEqual(len(data['char_array']), 7, 'not all elements loaded')
@@ -503,8 +503,8 @@ class Testing(unittest.TestCase):
                     'x_1_1_10_1_1': (1, 1, 10),
                     'x_10_1_1_10': (10, 1, 1, 10),
                     }
-        
-        
+
+
         for var, shape in expected.items():
             self.assertEqual(data[var].shape, shape)
             self.assertEqual(data[var].ndim, len(shape))
@@ -521,8 +521,9 @@ class Testing(unittest.TestCase):
                     'dimension 3: 10 movies                                   ',
                     'dimension 4: sorted units                                ',
                     'dimension 5: PSTH time bins                              ']
-
+        self.assertEqual(data['char_arr_1d'], 'abcd')
         self.assertEqual(data['char_arr_2d'], expected)
+        self.assertEqual(data['char_arr_3d'], [['abcd', 'ghij', 'mnöp'], ['defg', 'jklm', 'pqrs']])
 
 if __name__ == '__main__':
 
