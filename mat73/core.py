@@ -124,7 +124,7 @@ class HDF5Decoder():
                 else:
                     data = []
                     row_ind = []
-                
+
                 col_ind = hdf5['jc']
                 n_rows = hdf5.attrs['MATLAB_sparse']
                 n_cols = len(col_ind) - 1
@@ -264,13 +264,21 @@ class HDF5Decoder():
                 return None
 
         elif mtype=='char':
-            string_array = np.ravel(dataset)
-            if dataset.ndim == 2 and dataset.shape[1] > 1:
-                # MATLAB uses column-major order, so we need to transpose
-                string_array = [''.join([chr(x) for x in string_array][n::dataset.shape[1]]) for n in range(dataset.shape[1])]
-            else:
-                string_array = ''.join([chr(x) for x in string_array])
-            return string_array
+            # convert to StringDType, as else can't read \x00
+            # see https://github.com/numpy/numpy/issues/28964
+            arr = np.vectorize(chr)(np.array(dataset)).astype('T')
+            arr[arr==''] = '\x00'  # retain nonprintable chars
+
+            # join on first axis for 1 and 2d, second last for others
+            # not sure if this is correct, but worked in my examples so far
+            ax = 1 if dataset.ndim<3 else -2
+            char_arr = np.apply_along_axis(lambda x: ''.join(x), axis=ax, arr=arr.T)
+            string_list = char_arr.tolist()
+
+            if arr.ndim==2 and arr.shape[1]==1:
+                string_list = string_list[0]
+
+            return string_list
 
         elif mtype=='bool':
             return bool(dataset)
@@ -310,13 +318,13 @@ class HDF5Decoder():
 
 def squeeze(arr):
     """Vectors are saved as 2D matrices in MATLAB, however in numpy
-    there is no distinction between a column and a row vector. 
+    there is no distinction between a column and a row vector.
     Therefore, remove superfluous dimensions if the array is 2D and
     one of the dimensions is singular"""
     if arr.ndim==2 and 1 in arr.shape:
         return arr.reshape([x for x in arr.shape if x>1])
     return arr
-    
+
 
 def loadmat(file, use_attrdict=False, only_include=None, verbose=True):
     """
@@ -363,8 +371,4 @@ def savemat(filename, verbose=True):
 
 if __name__=='__main__':
     # for testing / debugging
-    d = loadmat('../tests/testfile11.mat', only_include='foo')
-
-
-    # file = '../tests/testfile8.mat'
-    # data = loadmat(file)
+    d = loadmat('../tests/testfile8.mat')
