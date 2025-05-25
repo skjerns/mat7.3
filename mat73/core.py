@@ -13,6 +13,8 @@ import logging
 from typing import Iterable
 from mat73.version import __version__
 
+logger = logging.getLogger('mat73')
+
 def empty(*dims):
     if len(dims)==1:
         return [[] for x in range(dims[0])]
@@ -95,7 +97,7 @@ class HDF5Decoder():
         if self.only_include is not None:
             for var, found in self._found_include_var.items():
                 if not found:
-                    logging.warning(f'Variable "{var}" was specified to be loaded'\
+                    logger.warning(f'Variable "{var}" was specified to be loaded'\
                                   ' but could not be found.')
             if not any(list(self._found_include_var.values())):
                 print(hdf5.filename, 'contains the following vars:')
@@ -124,25 +126,25 @@ class HDF5Decoder():
                 else:
                     data = []
                     row_ind = []
-                
+
                 col_ind = hdf5['jc']
                 n_rows = hdf5.attrs['MATLAB_sparse']
                 n_cols = len(col_ind) - 1
                 return csc_matrix((data, row_ind, col_ind), shape=(n_rows, n_cols))
             except ModuleNotFoundError:
-                logging.error(f'`scipy` not installed. To load the sparse matrix'
+                logger.error(f'`scipy` not installed. To load the sparse matrix'
                                 f' `{hdf5.name}`,'
                                 ' you need to have scipy installed. Please install'
                                 ' via `pip install scipy`')
             except DeprecationWarning:
-                logging.error(f'Tried loading the sparse matrix `{hdf5.name}`'
+                logger.error(f'Tried loading the sparse matrix `{hdf5.name}`'
                                 ' with scipy, but'
                                 ' the interface has been deprecated. Please'
                                 ' raise this error as an issue on GitHub:'
                                 ' https://github.com/skjerns/mat7.3/issues')
             except KeyError as e:
-                logging.error(f'Tried loading the sparse matrix `{hdf5.name}`'
-                                ' but something went wrong: {e}\n{e.__traceback__}')
+                logger.error(f'Tried loading the sparse matrix `{hdf5.name}`'
+                                ' but something went wrong:\n{e}', exc_info=True)
                 raise e
 
         if isinstance(hdf5, (h5py._hl.group.Group)):
@@ -219,7 +221,7 @@ class HDF5Decoder():
             if self.verbose:
                 message = 'ERROR: not a MATLAB datatype: ' + \
                           '{}, ({})'.format(dataset, dataset.dtype)
-                logging.error(message)
+                logger.error(message)
             return None
 
         known_cls = ['cell', 'char', 'bool', 'logical', 'double', 'single',
@@ -300,19 +302,19 @@ class HDF5Decoder():
             if self.verbose:
                 message = 'ERROR: MATLAB type not supported: ' + \
                           '{}, ({})'.format(mtype, dataset.dtype)
-                logging.error(message)
+                logger.error(message)
             return None
 
 
 def squeeze(arr):
     """Vectors are saved as 2D matrices in MATLAB, however in numpy
-    there is no distinction between a column and a row vector. 
+    there is no distinction between a column and a row vector.
     Therefore, remove superfluous dimensions if the array is 2D and
     one of the dimensions is singular"""
     if arr.ndim==2 and 1 in arr.shape:
         return arr.reshape([x for x in arr.shape if x>1])
     return arr
-    
+
 
 def loadmat(file, use_attrdict=False, only_include=None, verbose=True):
     """
@@ -339,7 +341,7 @@ def loadmat(file, use_attrdict=False, only_include=None, verbose=True):
     if isinstance(file, str):
         ext = os.path.splitext(file)[1].lower()
         if ext!='.mat':
-            logging.warning('Can only load MATLAB .mat file, this file type might '
+            logger.warning('Can only load MATLAB .mat file, this file type might '
                             f'be unsupported: {file}')
 
     try:
