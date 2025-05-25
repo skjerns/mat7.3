@@ -272,11 +272,21 @@ class HDF5Decoder():
             # join on first axis for 1 and 2d, second last for others
             # not sure if this is correct, but worked in my examples so far
             ax = 1 if dataset.ndim<3 else -2
+
             char_arr = np.apply_along_axis(lambda x: ''.join(x), axis=ax, arr=arr.T)
             string_list = char_arr.tolist()
 
             if arr.ndim==2 and arr.shape[1]==1:
                 string_list = string_list[0]
+
+            if arr.ndim>2:
+                # print warning to be sure. I haven't encountered any char
+                # arrays with ndim>2 in the wild yet so can't be sure that
+                # they are actually the way I synthesized them
+                logging.warning(f"Loading char array '{dataset.name}' with {arr.ndim} dimensions "
+                                f"might be wrong stacked (i.e. dimensions scrambled). "
+                                f"please check variable is correct and report errors "
+                                f"on github.com/skjerns/mat7.3")
 
             return string_list
 
@@ -371,4 +381,4 @@ def savemat(filename, verbose=True):
 
 if __name__=='__main__':
     # for testing / debugging
-    d = loadmat('../tests/testfile8.mat')
+    d = loadmat('../tests/testfile16.mat')
