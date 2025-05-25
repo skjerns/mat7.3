@@ -144,7 +144,7 @@ class HDF5Decoder():
                                 ' https://github.com/skjerns/mat7.3/issues')
             except KeyError as e:
                 logger.error(f'Tried loading the sparse matrix `{hdf5.name}`'
-                                ' but something went wrong: {e}\n{e.__traceback__}')
+                                ' but something went wrong:\n{e}', exc_info=True)
                 raise e
 
         if isinstance(hdf5, (h5py._hl.group.Group)):
