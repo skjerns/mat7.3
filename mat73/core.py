@@ -9,9 +9,9 @@ Load MATLAB 7.3 files into Python
 import os
 import numpy as np
 import h5py
+from datetime import datetime, timedelta
 import logging
 from typing import Iterable
-from datetime import datetime, timezone, timedelta # Added for datetime handling
 from mat73.version import __version__
 
 logger = logging.getLogger('mat73')
@@ -301,90 +301,57 @@ class HDF5Decoder():
             if arr.size==1: arr=bool(arr)
             return arr
 
+        elif MATLAB_class == 'datetime':
+            # MATLAB datetime objects, when stored as numeric arrays with MATLAB_class='datetime',
+            # are assumed to be serial date numbers.
+            # The conversion adopted here assumes that the MATLAB serial date number `mdn`
+            # corresponds to Python's proleptic Gregorian ordinal system directly for the date part.
+            # That is, mdn = 1.0 represents the beginning of '0001-01-01'.
+            # The fractional part of mdn represents the time within that day.
+
+            datenums_raw = np.array(dataset, dtype=np.float64)
+            # Transpose data to be consistent with how other numeric types are handled
+            datenums_transposed = datenums_raw.T
+
+            original_shape = datenums_transposed.shape
+            flat_datenums = datenums_transposed.flatten()
+            py_datetimes = []
+
+            for mdn in flat_datenums:
+                if np.isnan(mdn):
+                    py_datetimes.append(None)  # Represent MATLAB NaT (Not-a-Time) as None
+                    continue
+
+                dt_ordinal_day = int(np.floor(mdn))
+                time_fraction = mdn - np.floor(mdn)
+
+                if dt_ordinal_day < 1:
+                    # datetime.fromordinal requires the ordinal to be >= 1.
+                    # This case implies a date before 0001-01-01.
+                    logging.warning(
+                        f"MATLAB datetime value {mdn} results in ordinal day {dt_ordinal_day}, "
+                        f"which is before 0001-01-01. Storing as None."
+                    )
+                    py_datetimes.append(None)
+                    continue
+
+                try:
+                    current_dt = datetime.fromordinal(dt_ordinal_day)
+                    # Add the time part, scaled from fraction of a day to seconds
+                    current_dt += timedelta(seconds=time_fraction * 86400.0)
+                    py_datetimes.append(current_dt)
+                except ValueError as e:
+                    logging.warning(
+                        f"Could not convert MATLAB datetime value {mdn} (ordinal day {dt_ordinal_day}) "
+                        f"to Python datetime: {e}. Storing as None."
+                    )
+                    py_datetimes.append(None)
+
+            result_array = np.array(py_datetimes, dtype=object).reshape(original_shape)
+            return squeeze(result_array)
+
         elif mtype=='canonical empty':
             return None
-
-        elif mtype == 'datetime': # Added datetime handling
-            if dataset.attrs.get('MATLAB_object_decode') != 3:
-                if self.verbose:
-                    logger.warning(f"Dataset {dataset.name} is 'datetime' but lacks MATLAB_object_decode=3.")
-                return None
-
-            original_shape = dataset.shape
-            if not (dataset.ndim >= 1 and original_shape[-1] == 6):
-                if self.verbose:
-                    logger.warning(f"Datetime dataset {dataset.name} has unexpected shape {original_shape}.")
-                return None
-
-            try:
-                ref_data_np = np.asarray(dataset, dtype=np.uint32)
-            except Exception as e:
-                if self.verbose:
-                    logger.error(f"Could not convert HDF5 dataset {dataset.name} to NumPy array for datetime: {e}")
-                return None
-
-            if len(original_shape) == 1:
-                dt_array_shape = ()
-                num_datetimes = 1
-                ref_data_np_flat = ref_data_np.reshape(1, 6)
-            else:
-                dt_array_shape = original_shape[:-1]
-                num_datetimes = np.prod(dt_array_shape).astype(int)
-                ref_data_np_flat = ref_data_np.reshape(num_datetimes, 6)
-
-            if num_datetimes == 0:
-                return np.array([], dtype=object)
-
-            py_datetimes_flat = []
-            epoch_utc = datetime(1970, 1, 1, tzinfo=timezone.utc)
-            ref_start_char_code = ord('c')
-
-            for i in range(num_datetimes):
-                ref_entry = ref_data_np_flat[i]
-                try:
-                    data_ref_idx = int(ref_entry[4])
-                except (IndexError, ValueError):
-                    if self.verbose:
-                        logger.warning(f"Invalid data_ref_idx for datetime {dataset.name} element {i}.")
-                    py_datetimes_flat.append(None)
-                    continue
-
-                target_ref_char = chr(ref_start_char_code + data_ref_idx - 1)
-
-                if self.refs is None or target_ref_char not in self.refs:
-                    if self.verbose:
-                        logger.warning(f"Missing #refs#/{target_ref_char} for datetime {dataset.name} element {i}.")
-                    py_datetimes_flat.append(None)
-                    continue
-
-                timestamp_dataset = self.refs[target_ref_char]
-
-                try:
-                    # MATLAB stores these as (1,1) double arrays in #refs#
-                    milliseconds_since_epoch = float(timestamp_dataset[0,0])
-                except Exception as e:
-                    if self.verbose:
-                        logger.error(f"Error reading timestamp from #refs#/{target_ref_char} for {dataset.name} element {i}: {e}")
-                    py_datetimes_flat.append(None)
-                    continue
-
-                seconds_since_epoch = milliseconds_since_epoch / 1000.0
-                try:
-                    dt_object_utc = epoch_utc + timedelta(seconds=seconds_since_epoch)
-                    py_datetimes_flat.append(dt_object_utc)
-                except OverflowError:
-                     if self.verbose:
-                        logger.warning(f"Overflow converting timestamp for {dataset.name} element {i}.")
-                     py_datetimes_flat.append(None)
-
-            if not py_datetimes_flat and num_datetimes > 0:
-                 return None
-
-            if not dt_array_shape: # Scalar case
-                return py_datetimes_flat[0] if py_datetimes_flat else None
-
-            dt_numpy_array = np.array(py_datetimes_flat, dtype=object).reshape(dt_array_shape)
-            return squeeze(dt_numpy_array)
 
         # complex numbers need to be filtered out separately
         elif 'imag' in str(dataset.dtype):
