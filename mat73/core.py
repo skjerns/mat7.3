@@ -11,6 +11,7 @@ import numpy as np
 import h5py
 import logging
 from typing import Iterable
+from datetime import datetime, timezone, timedelta # Added for datetime handling
 from mat73.version import __version__
 
 logger = logging.getLogger('mat73')
@@ -302,6 +303,88 @@ class HDF5Decoder():
 
         elif mtype=='canonical empty':
             return None
+
+        elif mtype == 'datetime': # Added datetime handling
+            if dataset.attrs.get('MATLAB_object_decode') != 3:
+                if self.verbose:
+                    logger.warning(f"Dataset {dataset.name} is 'datetime' but lacks MATLAB_object_decode=3.")
+                return None
+
+            original_shape = dataset.shape
+            if not (dataset.ndim >= 1 and original_shape[-1] == 6):
+                if self.verbose:
+                    logger.warning(f"Datetime dataset {dataset.name} has unexpected shape {original_shape}.")
+                return None
+
+            try:
+                ref_data_np = np.asarray(dataset, dtype=np.uint32)
+            except Exception as e:
+                if self.verbose:
+                    logger.error(f"Could not convert HDF5 dataset {dataset.name} to NumPy array for datetime: {e}")
+                return None
+
+            if len(original_shape) == 1:
+                dt_array_shape = ()
+                num_datetimes = 1
+                ref_data_np_flat = ref_data_np.reshape(1, 6)
+            else:
+                dt_array_shape = original_shape[:-1]
+                num_datetimes = np.prod(dt_array_shape).astype(int)
+                ref_data_np_flat = ref_data_np.reshape(num_datetimes, 6)
+
+            if num_datetimes == 0:
+                return np.array([], dtype=object)
+
+            py_datetimes_flat = []
+            epoch_utc = datetime(1970, 1, 1, tzinfo=timezone.utc)
+            ref_start_char_code = ord('c')
+
+            for i in range(num_datetimes):
+                ref_entry = ref_data_np_flat[i]
+                try:
+                    data_ref_idx = int(ref_entry[4])
+                except (IndexError, ValueError):
+                    if self.verbose:
+                        logger.warning(f"Invalid data_ref_idx for datetime {dataset.name} element {i}.")
+                    py_datetimes_flat.append(None)
+                    continue
+
+                target_ref_char = chr(ref_start_char_code + data_ref_idx - 1)
+
+                if self.refs is None or target_ref_char not in self.refs:
+                    if self.verbose:
+                        logger.warning(f"Missing #refs#/{target_ref_char} for datetime {dataset.name} element {i}.")
+                    py_datetimes_flat.append(None)
+                    continue
+
+                timestamp_dataset = self.refs[target_ref_char]
+
+                try:
+                    # MATLAB stores these as (1,1) double arrays in #refs#
+                    milliseconds_since_epoch = float(timestamp_dataset[0,0])
+                except Exception as e:
+                    if self.verbose:
+                        logger.error(f"Error reading timestamp from #refs#/{target_ref_char} for {dataset.name} element {i}: {e}")
+                    py_datetimes_flat.append(None)
+                    continue
+
+                seconds_since_epoch = milliseconds_since_epoch / 1000.0
+                try:
+                    dt_object_utc = epoch_utc + timedelta(seconds=seconds_since_epoch)
+                    py_datetimes_flat.append(dt_object_utc)
+                except OverflowError:
+                     if self.verbose:
+                        logger.warning(f"Overflow converting timestamp for {dataset.name} element {i}.")
+                     py_datetimes_flat.append(None)
+
+            if not py_datetimes_flat and num_datetimes > 0:
+                 return None
+
+            if not dt_array_shape: # Scalar case
+                return py_datetimes_flat[0] if py_datetimes_flat else None
+
+            dt_numpy_array = np.array(py_datetimes_flat, dtype=object).reshape(dt_array_shape)
+            return squeeze(dt_numpy_array)
 
         # complex numbers need to be filtered out separately
         elif 'imag' in str(dataset.dtype):
