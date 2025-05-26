@@ -523,7 +523,7 @@ class Testing(unittest.TestCase):
                     'dimension 5: PSTH time bins                              ']
         self.assertEqual(data['char_arr_1d'], 'abcd')
         self.assertEqual(data['char_arr_2d'], expected)
-        self.assertEqual(data['char_arr_3d'], [['abcd', 'ghij', 'mnöp'], ['defg', 'jklm', 'pqrs']])
+        self.assertEqual(data['char_arr_3d'], [['abcd', 'defg'], ['ghij', 'jklm'], ['mnöp', 'pqrs']])
 
 if __name__ == '__main__':
 

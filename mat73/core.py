@@ -264,16 +264,16 @@ class HDF5Decoder():
                 return None
 
         elif mtype=='char':
-            # convert to StringDType, as else can't read \x00
+            codes = np.asarray(dataset, dtype=np.uint16)
+
+            # object dtype → keeps '\x00'
             # see https://github.com/numpy/numpy/issues/28964
-            arr = np.vectorize(chr)(np.array(dataset)).astype('T')
-            arr[arr==''] = '\x00'  # retain nonprintable chars
+            to_char = np.vectorize(chr, otypes=[object])
+            arr = to_char(codes)
 
-            # join on first axis for 1 and 2d, second last for others
-            # not sure if this is correct, but worked in my examples so far
-            ax = 1 if dataset.ndim<3 else -2
+            char_axis = 0 if arr.ndim < 3 else -2
+            char_arr = np.apply_along_axis(lambda x: ''.join(x), axis=char_axis, arr=arr)
 
-            char_arr = np.apply_along_axis(lambda x: ''.join(x), axis=ax, arr=arr.T)
             string_list = char_arr.tolist()
 
             if arr.ndim==2 and arr.shape[1]==1:
@@ -382,3 +382,4 @@ def savemat(filename, verbose=True):
 if __name__=='__main__':
     # for testing / debugging
     d = loadmat('../tests/testfile16.mat')
+    print(d)
