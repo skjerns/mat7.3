@@ -9,6 +9,7 @@ Load MATLAB 7.3 files into Python
 import os
 import numpy as np
 import h5py
+from datetime import datetime, timedelta
 import logging
 from typing import Iterable
 from mat73.version import __version__
@@ -299,6 +300,55 @@ class HDF5Decoder():
             arr = squeeze(np.array(dataset, dtype=bool).T)
             if arr.size==1: arr=bool(arr)
             return arr
+
+        elif MATLAB_class == 'datetime':
+            # MATLAB datetime objects, when stored as numeric arrays with MATLAB_class='datetime',
+            # are assumed to be serial date numbers.
+            # The conversion adopted here assumes that the MATLAB serial date number `mdn`
+            # corresponds to Python's proleptic Gregorian ordinal system directly for the date part.
+            # That is, mdn = 1.0 represents the beginning of '0001-01-01'.
+            # The fractional part of mdn represents the time within that day.
+
+            datenums_raw = np.array(dataset, dtype=np.float64)
+            # Transpose data to be consistent with how other numeric types are handled
+            datenums_transposed = datenums_raw.T
+
+            original_shape = datenums_transposed.shape
+            flat_datenums = datenums_transposed.flatten()
+            py_datetimes = []
+
+            for mdn in flat_datenums:
+                if np.isnan(mdn):
+                    py_datetimes.append(None)  # Represent MATLAB NaT (Not-a-Time) as None
+                    continue
+
+                dt_ordinal_day = int(np.floor(mdn))
+                time_fraction = mdn - np.floor(mdn)
+
+                if dt_ordinal_day < 1:
+                    # datetime.fromordinal requires the ordinal to be >= 1.
+                    # This case implies a date before 0001-01-01.
+                    logging.warning(
+                        f"MATLAB datetime value {mdn} results in ordinal day {dt_ordinal_day}, "
+                        f"which is before 0001-01-01. Storing as None."
+                    )
+                    py_datetimes.append(None)
+                    continue
+
+                try:
+                    current_dt = datetime.fromordinal(dt_ordinal_day)
+                    # Add the time part, scaled from fraction of a day to seconds
+                    current_dt += timedelta(seconds=time_fraction * 86400.0)
+                    py_datetimes.append(current_dt)
+                except ValueError as e:
+                    logging.warning(
+                        f"Could not convert MATLAB datetime value {mdn} (ordinal day {dt_ordinal_day}) "
+                        f"to Python datetime: {e}. Storing as None."
+                    )
+                    py_datetimes.append(None)
+
+            result_array = np.array(py_datetimes, dtype=object).reshape(original_shape)
+            return squeeze(result_array)
 
         elif mtype=='canonical empty':
             return None
