@@ -266,9 +266,31 @@ class HDF5Decoder():
                 return None
 
         elif mtype=='char':
-            string_array = np.ravel(dataset)
-            string_array = ''.join([chr(x) for x in string_array])
-            return string_array
+            codes = np.asarray(dataset, dtype=np.uint16)
+
+            # object dtype → keeps '\x00'
+            # see https://github.com/numpy/numpy/issues/28964
+            to_char = np.vectorize(chr, otypes=[object])
+            arr = to_char(codes)
+
+            char_axis = 0 if arr.ndim < 3 else -2
+            char_arr = np.apply_along_axis(lambda x: ''.join(x), axis=char_axis, arr=arr)
+
+            string_list = char_arr.tolist()
+
+            if arr.ndim==2 and arr.shape[1]==1:
+                string_list = string_list[0]
+
+            if arr.ndim>2:
+                # print warning to be sure. I haven't encountered any char
+                # arrays with ndim>2 in the wild yet so can't be sure that
+                # they are actually the way I synthesized them
+                logging.warning(f"Loading char array '{dataset.name}' with {arr.ndim} dimensions "
+                                f"might be wrong stacked (i.e. dimensions scrambled). "
+                                f"please check variable is correct and report errors "
+                                f"on github.com/skjerns/mat7.3")
+
+            return string_list
 
         elif mtype=='bool':
             return bool(dataset)
@@ -361,8 +383,5 @@ def savemat(filename, verbose=True):
 
 if __name__=='__main__':
     # for testing / debugging
-    d = loadmat('../tests/testfile11.mat', only_include='foo')
-
-
-    # file = '../tests/testfile8.mat'
-    # data = loadmat(file)
+    d = loadmat('../tests/testfile16.mat')
+    print(d)
