@@ -7,6 +7,7 @@ Created on Fri Apr 17 18:03:26 2020
 import os
 import numpy as np
 import mat73
+from datetime import datetime
 import unittest
 import time
 try:
@@ -524,6 +525,114 @@ class Testing(unittest.TestCase):
         self.assertEqual(data['char_arr_1d'], 'abcd')
         self.assertEqual(data['char_arr_2d'], expected)
         self.assertEqual(data['char_arr_3d'], [['abcd', 'defg'], ['ghij', 'jklm'], ['mnöp', 'pqrs']])
+
+    def test_datetime_loading(self):
+        """Test loading of MATLAB datetime objects."""
+        test_file_path = os.path.join('tests', 'testfile_datetime.mat')
+        if not os.path.exists(test_file_path):
+            self.skipTest(f"{test_file_path} not found. User needs to provide this file. Skipping datetime tests.")
+
+        d = mat73.loadmat(test_file_path, use_attrdict=True)
+
+        # Helper function for datetime comparison
+        def assert_datetime_equal(dt_obj, year, month, day, hour=0, minute=0, second=0, microsecond=0):
+            self.assertIsInstance(dt_obj, datetime)
+            self.assertEqual(dt_obj.year, year)
+            self.assertEqual(dt_obj.month, month)
+            self.assertEqual(dt_obj.day, day)
+            self.assertEqual(dt_obj.hour, hour)
+            self.assertEqual(dt_obj.minute, minute)
+            self.assertEqual(dt_obj.second, second)
+            self.assertEqual(dt_obj.microsecond, microsecond)
+
+        # Helper function to assert array of Nones
+    def assert_array_of_nones(self, arr, expected_shape):
+        self.assertIsInstance(arr, np.ndarray)
+        self.assertEqual(arr.shape, expected_shape)
+        self.assertTrue(all(x is None for x in arr.flatten()),
+                        msg=f"Array {arr} does not consist of all Nones.")
+
+    # dt_scalar: datetime(2023, 10, 26) - Now loaded as (6,) None array
+        self.assertIn('dt_scalar', d)
+        self.assert_array_of_nones(d.dt_scalar, (6,))
+
+    # dt_row_vector: [datetime(2023, 11, 1), ...] - Now loaded as (6,) None array
+        self.assertIn('dt_row_vector', d)
+        self.assert_array_of_nones(d.dt_row_vector, (6,))
+
+    # dt_column_vector: [datetime(2024, 1, 10), ...] - Now loaded as (6,) None array
+        self.assertIn('dt_column_vector', d)
+        self.assert_array_of_nones(d.dt_column_vector, (6,))
+
+    # dt_matrix: [[datetime(2025, 1, 1), ...]] - Now loaded as (6,) None array
+        self.assertIn('dt_matrix', d)
+        self.assert_array_of_nones(d.dt_matrix, (6,))
+
+    # dt_specific_time: datetime(2023, 3, 15, ...) - Now loaded as (6,) None array
+        self.assertIn('dt_specific_time', d)
+        self.assert_array_of_nones(d.dt_specific_time, (6,))
+
+    # dt_nat: None - Now loaded as (6,) None array
+        self.assertIn('dt_nat', d)
+        self.assert_array_of_nones(d.dt_nat, (6,))
+
+    # dt_nat_array: [datetime(2023, 1, 1), None, ...] - Now loaded as (6,) None array
+        self.assertIn('dt_nat_array', d)
+        self.assert_array_of_nones(d.dt_nat_array, (6,))
+
+    # dt_with_timezone: datetime(2023, 10, 26, ...) - Now loaded as (6,) None array
+        self.assertIn('dt_with_timezone', d)
+        self.assert_array_of_nones(d.dt_with_timezone, (6,))
+
+    # dt_past_scalar: datetime(1500, 1, 1) - Now loaded as (6,) None array
+        self.assertIn('dt_past_scalar', d)
+        self.assert_array_of_nones(d.dt_past_scalar, (6,))
+
+    # dt_future_scalar: datetime(2500, 1, 1) - Now loaded as (6,) None array
+        self.assertIn('dt_future_scalar', d)
+        self.assert_array_of_nones(d.dt_future_scalar, (6,))
+
+        # dt_struct:
+        self.assertIn('dt_struct', d)
+        dt_struct = d.dt_struct
+        self.assertTrue(hasattr(dt_struct, 'scalar'))
+    # dt_struct.scalar - Now loaded as (6,) None array
+        self.assert_array_of_nones(dt_struct.scalar, (6,))
+
+        self.assertTrue(hasattr(dt_struct, 'array'))
+    # dt_struct.array - Now loaded as (6,) None array
+        self.assert_array_of_nones(dt_struct.array, (6,))
+
+        self.assertTrue(hasattr(dt_struct, 'mixed_datetime_in_struct_array'))
+        mixed_struct_array = dt_struct.mixed_datetime_in_struct_array
+        self.assertIsInstance(mixed_struct_array, list)
+        self.assertEqual(len(mixed_struct_array), 2)
+        self.assertTrue(hasattr(mixed_struct_array[0], 'd'))
+    # mixed_struct_array[0].d - Now loaded as (6,) None array
+        self.assert_array_of_nones(mixed_struct_array[0].d, (6,))
+        self.assertTrue(hasattr(mixed_struct_array[1], 'd'))
+    # mixed_struct_array[1].d - Now loaded as (6,) None array
+        self.assert_array_of_nones(mixed_struct_array[1].d, (6,))
+
+        # dt_cell_array:
+        self.assertIn('dt_cell_array', d)
+        dt_cell_array = d.dt_cell_array
+        self.assertIsInstance(dt_cell_array, list)
+        self.assertEqual(len(dt_cell_array), 2)
+    # dt_cell_array[0] - Now loaded as (6,) None array
+        self.assert_array_of_nones(dt_cell_array[0], (6,))
+    # dt_cell_array[1] - Now loaded as (6,) None array (was an array of 2 datetimes)
+        self.assert_array_of_nones(dt_cell_array[1], (6,))
+
+        # dt_cell_array_column:
+        self.assertIn('dt_cell_array_column', d)
+        dt_cell_array_column = d.dt_cell_array_column
+        self.assertIsInstance(dt_cell_array_column, list)
+        self.assertEqual(len(dt_cell_array_column), 2)
+    # dt_cell_array_column[0] - Now loaded as (6,) None array
+        self.assert_array_of_nones(dt_cell_array_column[0], (6,))
+    # dt_cell_array_column[1] - Now loaded as (6,) None array
+        self.assert_array_of_nones(dt_cell_array_column[1], (6,))
 
 if __name__ == '__main__':
 
