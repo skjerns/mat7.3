@@ -319,33 +319,64 @@ class HDF5Decoder():
 
             for mdn in flat_datenums:
                 if np.isnan(mdn):
-                    py_datetimes.append(None)  # Represent MATLAB NaT (Not-a-Time) as None
-                    continue
-
-                dt_ordinal_day = int(np.floor(mdn))
-                time_fraction = mdn - np.floor(mdn)
-
-                if dt_ordinal_day < 1:
-                    # datetime.fromordinal requires the ordinal to be >= 1.
-                    # This case implies a date before 0001-01-01.
-                    logging.warning(
-                        f"MATLAB datetime value {mdn} results in ordinal day {dt_ordinal_day}, "
-                        f"which is before 0001-01-01. Storing as None."
-                    )
                     py_datetimes.append(None)
                     continue
 
-                try:
-                    current_dt = datetime.fromordinal(dt_ordinal_day)
-                    # Add the time part, scaled from fraction of a day to seconds
-                    current_dt += timedelta(seconds=time_fraction * 86400.0)
-                    py_datetimes.append(current_dt)
-                except ValueError as e:
-                    logging.warning(
-                        f"Could not convert MATLAB datetime value {mdn} (ordinal day {dt_ordinal_day}) "
-                        f"to Python datetime: {e}. Storing as None."
-                    )
-                    py_datetimes.append(None)
+                    # MATLAB epoch is 0000-01-01, Python's fromordinal epoch is 0001-01-01.
+                    # Offset is the number of days from 0000-01-01 to 0001-01-01.
+                    # This is 366 days (day 1 in MATLAB is 0000-01-01, day 1 in Python is 0001-01-01).
+                    # For example, MATLAB's datenum for 0001-01-01 is 367.
+                    # Python ordinal for 0001-01-01 is 1. So, python_ordinal = matlab_ordinal - 366.
+                    
+                    # It's more common to see the conversion as:
+                    # python_dt = datetime.fromordinal(matlab_serial_date - 366) + timedelta(days=matlab_serial_date % 1)
+                    # where matlab_serial_date is the raw mdn.
+
+                    # Let's separate integer day part and fractional time part from mdn
+                    matlab_day_ordinal = int(np.floor(mdn))
+                    time_fraction = mdn - matlab_day_ordinal # This is the fraction of the day for time
+
+                    # Adjust the day ordinal for Python's epoch
+                    python_day_ordinal = matlab_day_ordinal - 366
+
+                    if python_day_ordinal < 1:
+                        logging.warning(
+                            f"MATLAB datetime value {mdn} results in Python ordinal day {python_day_ordinal}, "
+                            f"which is before 0001-01-01. Storing as None."
+                        )
+                        py_datetimes.append(None)
+                        continue
+                    
+                    try:
+                        current_dt = datetime.fromordinal(python_day_ordinal)
+                        # Add the time part, scaled from fraction of a day to seconds
+                        # Ensure milliseconds are captured if present in time_fraction
+                        current_dt += timedelta(days=time_fraction) # timedelta handles day fractions correctly
+                        py_datetimes.append(current_dt)
+                    except ValueError as e:
+                        logging.warning(
+                            f"Could not convert MATLAB datetime value {mdn} (Python ordinal day {python_day_ordinal}) "
+                            f"to Python datetime: {e}. Storing as None."
+                        )
+                        py_datetimes.append(None)
+
+            if not py_datetimes and np.prod(original_shape) != 0:
+                # If no datetime objects were created (e.g., all inputs were unconvertible,
+                # or flat_datenums itself was empty contrary to original_shape expectations),
+                # and the target shape is not actually empty (e.g. (0,N) or (N,0)),
+                # fill py_datetimes with Nones to match the expected number of elements.
+                num_expected_elements = np.prod(original_shape)
+                # Only fill if num_expected_elements is positive.
+                # If original_shape implies 0 elements (e.g., (6,0)), prod is 0, this block is skipped.
+                # np.array([], dtype=object).reshape((6,0)) is valid.
+                if num_expected_elements > 0 :
+                     logging.warning(
+                        f"Datetime array {dataset.name} from {dataset.file.filename} resulted in no processable values but expected shape {original_shape} ({num_expected_elements} elements). "
+                        f"Filling with None. This might indicate an empty or all-NaT MATLAB datetime array."
+                     )
+                     py_datetimes = [None] * int(num_expected_elements)
+                # If num_expected_elements is 0 (e.g. shape (N,0)), py_datetimes remains [],
+                # and np.array([], dtype=object).reshape((N,0)) is correct.
 
             result_array = np.array(py_datetimes, dtype=object).reshape(original_shape)
             return squeeze(result_array)
