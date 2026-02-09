@@ -336,9 +336,7 @@ class HDF5Decoder():
                     continue
 
                 try:
-                    current_dt = datetime.fromordinal(dt_ordinal_day)
-                    # Add the time part, scaled from fraction of a day to seconds
-                    current_dt += timedelta(seconds=time_fraction * 86400.0)
+                    current_dt = datetime.fromordinal(dt_ordinal_day) +                         timedelta(days=time_fraction) - timedelta(days=366)
                     py_datetimes.append(current_dt)
                 except ValueError as e:
                     logging.warning(
