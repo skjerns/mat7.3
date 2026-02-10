@@ -303,6 +303,38 @@ class HDF5Decoder():
         elif mtype=='canonical empty':
             return None
 
+        elif mtype=='affine2d':
+            if 'MATLAB_object_decode' not in dataset.attrs or \
+               dataset.attrs['MATLAB_object_decode'] != 3:
+                if self.verbose:
+                    logger.error(f'Unsupported affine2d encoding: {dataset.name}')
+                return None
+            file_handle = dataset.file
+            if '#subsystem#' not in file_handle or \
+               'MCOS' not in file_handle['#subsystem#']:
+                if self.verbose:
+                    logger.error(f'No MCOS subsystem found for affine2d: {dataset.name}')
+                return None
+            mcos_refs = file_handle['#subsystem#/MCOS'][0]
+            raw_data = np.array(dataset)
+            if raw_data.ndim != 2 or raw_data.shape[1] < 5:
+                if self.verbose:
+                    logger.error(f'Unexpected affine2d data shape: {raw_data.shape}')
+                return None
+            mcos_idx = int(raw_data[0, 4]) + 1
+            if mcos_idx < 0 or mcos_idx >= len(mcos_refs):
+                if self.verbose:
+                    logger.error(f'affine2d MCOS index {mcos_idx} out of range')
+                return None
+            mcos_obj = file_handle[mcos_refs[mcos_idx]]
+            if not isinstance(mcos_obj, h5py.Group) or \
+               'TransformationMatrix' not in mcos_obj:
+                if self.verbose:
+                    logger.error(f'No TransformationMatrix in MCOS object for affine2d')
+                return None
+            T_stored = np.array(mcos_obj['TransformationMatrix'])
+            return {'T': T_stored.T}
+
         # complex numbers need to be filtered out separately
         elif 'imag' in str(dataset.dtype):
             if dataset.attrs['MATLAB_class']==b'single':
