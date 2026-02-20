@@ -1,0 +1,69 @@
+# Verify that files produced by mat73.savemat are loadable and correct in MATLAB.
+#
+# Workflow:
+#   1. Install Python + mat73
+#   2. Run create_savemat_testfiles.py  →  tests/savemat_verify.mat
+#   3. Install MATLAB (automatic license for public repos — no token needed)
+#   4. Run verify_savemat.m to assert every variable round-trips correctly
+#
+# MATLAB licensing:
+#   Public GitHub repos automatically receive a MATLAB license via the
+#   matlab-actions/setup-matlab action (MathWorks Batch Licensing Pilot).
+#   If this repo is ever made private, set a MATLAB_BATCH_TOKEN secret and
+#   add:  env: { MLM_LICENSE_TOKEN: ${{ secrets.MATLAB_BATCH_TOKEN }} }
+#   under the setup-matlab step.
+#
+# References:
+#   https://github.com/matlab-actions/setup-matlab
+#   https://github.com/matlab-actions/run-command
+
+name: Verify savemat in MATLAB
+
+on:
+  push:
+    branches: [ main, savemat ]
+    paths:
+      - 'mat73/savemat.py'
+      - 'tests/verify_savemat.m'
+      - 'tests/create_savemat_testfiles.py'
+      - '.github/workflows/verify-savemat-matlab.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'mat73/savemat.py'
+      - 'tests/verify_savemat.m'
+      - 'tests/create_savemat_testfiles.py'
+
+jobs:
+  matlab-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Python: install mat73 and generate the test .mat file ──────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install mat73
+        run: |
+          pip install -e .
+          pip install numpy h5py
+
+      - name: Generate savemat_verify.mat
+        run: python tests/create_savemat_testfiles.py
+
+      # ── MATLAB: load the .mat file and run all assertions ──────────────────
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: R2024b     # pin to a specific release for reproducibility
+
+      - name: Run MATLAB verification
+        uses: matlab-actions/run-command@v2
+        with:
+          # verify_savemat.m prints PASS/FAIL and errors on any failure
+          command: addpath('tests'); verify_savemat
