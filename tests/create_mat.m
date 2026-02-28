@@ -82,3 +82,52 @@ char_arr_3d = cat(3, ...
 
 save('testfile16.mat','char_arr_1d', 'char_arr_2d', 'char_arr_3d', '-v7.3')
 clear all
+
+%% file to test datetime loading
+% Scalar datetime
+dt_scalar = datetime(2023, 10, 26);
+
+% Row vector of datetimes
+dt_row_vector = [datetime(2023, 11, 1), datetime(2023, 11, 15), datetime(2023, 12, 25)];
+
+% Column vector of datetimes
+dt_column_vector = [datetime(2024, 1, 10); datetime(2024, 2, 20); datetime(2024, 3, 30)];
+
+% 2x2 matrix of datetimes
+dt_matrix = [datetime(2025, 1, 1), datetime(2025, 2, 1); ...
+             datetime(2025, 3, 1), datetime(2025, 4, 1)];
+
+% Datetime with specific time including milliseconds
+dt_specific_time = datetime(2023, 3, 15, 14, 30, 45, 678);
+
+% NaT (Not-a-Time)
+dt_nat = NaT;
+
+% Array with NaT values
+dt_nat_array = [datetime(2023, 1, 1), NaT, datetime(2023, 1, 3)];
+
+% Datetime with timezone (will be converted to UTC when stored)
+dt_with_timezone = datetime(2023, 10, 26, 10, 0, 0, 'TimeZone', 'America/New_York');
+
+% Past date (before Unix epoch)
+dt_past_scalar = datetime(1500, 1, 1);
+
+% Future date
+dt_future_scalar = datetime(2500, 1, 1);
+
+% Struct containing datetime fields
+dt_struct.scalar = datetime(2026, 7, 4);
+dt_struct.array = [datetime(2026, 8, 1); datetime(2026, 9, 15)];
+dt_struct.mixed_datetime_in_struct_array.d = [datetime(2026, 10, 1); datetime(2026, 11, 1)];
+
+% Cell array with datetime values
+dt_cell_array = {datetime(2027, 5, 18), [datetime(2027, 6, 1), datetime(2027, 7, 1)]};
+
+% Cell array column with datetime values
+dt_cell_array_column = {[datetime(2027, 8, 1)]; [datetime(2027, 9, 1)]};
+
+save('testfile_datetime.mat', 'dt_scalar', 'dt_row_vector', 'dt_column_vector', ...
+     'dt_matrix', 'dt_specific_time', 'dt_nat', 'dt_nat_array', 'dt_with_timezone', ...
+     'dt_past_scalar', 'dt_future_scalar', 'dt_struct', 'dt_cell_array', ...
+     'dt_cell_array_column', '-v7.3')
+clear all

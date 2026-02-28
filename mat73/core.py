@@ -9,6 +9,7 @@ Load MATLAB 7.3 files into Python
 import os
 import numpy as np
 import h5py
+from datetime import datetime, timedelta
 import logging
 from typing import Iterable
 from mat73.version import __version__
@@ -299,6 +300,141 @@ class HDF5Decoder():
             arr = squeeze(np.array(dataset, dtype=bool).T)
             if arr.size==1: arr=bool(arr)
             return arr
+
+        elif MATLAB_class == 'datetime':
+            # MATLAB datetime objects can be encoded in different ways:
+            # 1. With MATLAB_object_decode=3: MCOS objects (object-oriented encoding)
+            # 2. Without it: Simple numeric date arrays
+
+            if 'MATLAB_object_decode' in dataset.attrs and dataset.attrs['MATLAB_object_decode'] == 3:
+                # This is an MCOS-encoded datetime object
+                # The dataset contains reference metadata, not the actual datetime values
+                # We need to navigate to the MCOS subsystem to get the actual timestamps
+
+                # Get the file handle from the dataset
+                file_handle = dataset.file
+
+                # Check if MCOS subsystem exists
+                if '#subsystem#' in file_handle and 'MCOS' in file_handle['#subsystem#']:
+                    mcos_refs = file_handle['#subsystem#/MCOS'][0]
+
+                    # The 5th element (index 4) in the dataset appears to be the MCOS reference index
+                    # Extract reference indices from the dataset
+                    raw_data = np.array(dataset)
+
+                    # Handle different dataset shapes
+                    if raw_data.ndim == 2:
+                        # Shape is (n, 6) where n is the number of datetime values
+                        # The 5th column (index 4) contains a 0-based index into datetime objects
+                        # The actual datetime data starts at MCOS[2] (first two are metadata)
+                        # So the MCOS index is field[4] + 2
+                        mcos_indices = raw_data[:, 4] + 1
+                    else:
+                        # Fallback for unexpected shapes
+                        logger.warning(f"Unexpected shape for MCOS datetime: {raw_data.shape}")
+                        return None
+
+                    # Decode each datetime value from MCOS
+                    # Each index can point to either a scalar or array of datetime values
+                    all_datetimes = []
+                    for idx in mcos_indices:
+                        try:
+                            idx = int(idx)
+                            if 0 <= idx < len(mcos_refs):
+                                mcos_ref = mcos_refs[idx]
+                                mcos_obj = file_handle[mcos_ref]
+
+                                if isinstance(mcos_obj, h5py.Dataset) and mcos_obj.dtype == np.float64:
+                                    # The MCOS object contains Unix timestamp(s) in milliseconds
+                                    # It can be a scalar or an array of values
+                                    timestamps_ms = np.array(mcos_obj)
+
+                                    # Preserve the original shape
+                                    original_shape = timestamps_ms.shape
+
+                                    # Flatten to 1D array for processing
+                                    flat_timestamps = timestamps_ms.flatten()
+
+                                    # Convert each timestamp
+                                    datetime_values = []
+                                    for ts_ms in flat_timestamps:
+                                        if np.isnan(ts_ms):
+                                            datetime_values.append(None)  # NaT (Not-a-Time)
+                                        else:
+                                            # Convert milliseconds to seconds
+                                            timestamp_sec = ts_ms / 1000.0
+                                            # Convert to datetime
+                                            dt = datetime(1970, 1, 1) + timedelta(seconds=timestamp_sec)
+                                            datetime_values.append(dt)
+
+                                    # Reshape back to original shape and apply squeeze
+                                    if len(datetime_values) == 1:
+                                        all_datetimes.append(datetime_values[0])
+                                    else:
+                                        result = np.array(datetime_values, dtype=object).reshape(original_shape)
+                                        # Apply MATLAB-style transpose and squeeze
+                                        result = result.T
+                                        all_datetimes.append(squeeze(result))
+                                else:
+                                    logger.warning(f"Unexpected MCOS object type for datetime at index {idx}")
+                                    all_datetimes.append(None)
+                            else:
+                                logger.warning(f"MCOS index {idx} out of range")
+                                all_datetimes.append(None)
+                        except Exception as e:
+                            logger.warning(f"Error decoding MCOS datetime at index {idx}: {e}")
+                            all_datetimes.append(None)
+
+                    # Return the result appropriately
+                    if len(all_datetimes) == 1:
+                        # Single datetime (scalar or array)
+                        return all_datetimes[0]
+                    else:
+                        # Multiple datetime values/arrays
+                        return np.array(all_datetimes, dtype=object)
+                else:
+                    logger.warning("MCOS subsystem not found for MATLAB_object_decode=3 datetime")
+                    return None
+            else:
+                # Legacy format: numeric date arrays (datenums)
+                datenums_raw = np.array(dataset, dtype=np.float64)
+                datenums_transposed = datenums_raw.T
+
+                original_shape = datenums_transposed.shape
+                flat_datenums = datenums_transposed.flatten()
+                py_datetimes = []
+
+                # MATLAB uses days since January 0, 0000, Python uses days since January 1, 0001
+                MATLAB_TO_PYTHON_OFFSET = 366
+
+                for mdn in flat_datenums:
+                    if np.isnan(mdn):
+                        py_datetimes.append(None)  # Represent MATLAB NaT (Not-a-Time) as None
+                        continue
+
+                    # Convert MATLAB datenum to Python ordinal
+                    python_ordinal = mdn - MATLAB_TO_PYTHON_OFFSET
+                    dt_ordinal_day = int(np.floor(python_ordinal))
+                    time_fraction = python_ordinal - np.floor(python_ordinal)
+
+                    if dt_ordinal_day < 1:
+                        logging.warning(
+                            f"MATLAB datetime value {mdn} is before 0001-01-01. Storing as None."
+                        )
+                        py_datetimes.append(None)
+                        continue
+
+                    try:
+                        current_dt = datetime.fromordinal(dt_ordinal_day) + timedelta(days=time_fraction)
+                        py_datetimes.append(current_dt)
+                    except (ValueError, OverflowError) as e:
+                        logging.warning(
+                            f"Could not convert MATLAB datetime value {mdn}: {e}. Storing as None."
+                        )
+                        py_datetimes.append(None)
+
+                result_array = np.array(py_datetimes, dtype=object).reshape(original_shape)
+                return squeeze(result_array)
 
         elif mtype=='canonical empty':
             return None
