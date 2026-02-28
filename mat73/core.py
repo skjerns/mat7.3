@@ -9,6 +9,7 @@ Load MATLAB 7.3 files into Python
 import os
 import numpy as np
 import h5py
+from datetime import datetime, timedelta
 import logging
 from typing import Iterable
 from mat73.version import __version__
@@ -299,6 +300,50 @@ class HDF5Decoder():
             arr = squeeze(np.array(dataset, dtype=bool).T)
             if arr.size==1: arr=bool(arr)
             return arr
+
+        elif MATLAB_class == 'datetime':
+            # MATLAB datetime objects, when stored as numeric arrays with MATLAB_class='datetime',
+            # are assumed to be serial date numbers.
+            # The conversion adopted here assumes that the MATLAB serial date number `mdn`
+            # corresponds to Python's proleptic Gregorian ordinal system directly for the date part.
+            # MATLAB datetime objects, when stored as numeric arrays with MATLAB_class='datetime',
+            # are typically int64 representing microsecond ticks from MATLAB's epoch '0000-01-01 00:00:00'.
+
+            ticks_raw = np.array(dataset, dtype=np.int64)
+            # Transpose data to be consistent with how other numeric types are handled
+            ticks_transposed = ticks_raw.T
+
+            original_shape = ticks_transposed.shape
+            flat_ticks = ticks_transposed.flatten()
+            py_datetimes = []
+            MATLAB_NAT_INT64 = -9223372036854775808  # Corresponds to intmin('int64') in MATLAB, used for NaT
+
+            for tick_value in flat_ticks:
+                if tick_value == MATLAB_NAT_INT64:
+                    py_datetimes.append(None)  # Represent MATLAB NaT as None
+                    continue
+
+                try:
+                    # MATLAB's epoch for datetime ticks is '0000-01-01 00:00:00'.
+                    # Python's datetime(1, 1, 1) is the earliest representable date.
+                    # The difference is 366 days (year 0000 is a leap year in proleptic Gregorian calendar).
+                    dt_object = datetime(1, 1, 1) + timedelta(microseconds=int(tick_value)) - timedelta(days=366)
+                    py_datetimes.append(dt_object)
+                except OverflowError:
+                    logger.warning(
+                        f"MATLAB datetime tick value {tick_value} caused an OverflowError during conversion. "
+                        f"Storing as None."
+                    )
+                    py_datetimes.append(None)
+                except ValueError as ve: # Handles cases like microseconds out of range for timedelta
+                    logger.warning(
+                        f"MATLAB datetime tick value {tick_value} caused a ValueError: {ve}. "
+                        f"Storing as None."
+                    )
+                    py_datetimes.append(None)
+
+            result_array = np.array(py_datetimes, dtype=object).reshape(original_shape)
+            return squeeze(result_array)
 
         elif mtype=='canonical empty':
             return None
