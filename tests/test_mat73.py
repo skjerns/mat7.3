@@ -46,6 +46,11 @@ class Testing(unittest.TestCase):
             file_npt = os.path.join('./tests', file_npt)
         self.testfile_npt = file_npt
 
+        file_affine2d = 'testfile_affine2d.mat'
+        if not os.path.exists(file_affine2d):
+            file_affine2d = os.path.join('./tests', file_affine2d)
+        self.testfile_affine2d = file_affine2d
+
     def test_file_obj_loading(self):
         """test for loading as file object and string filename """
         d = mat73.loadmat(self.testfile1, use_attrdict=False)
@@ -524,6 +529,74 @@ class Testing(unittest.TestCase):
         self.assertEqual(data['char_arr_1d'], 'abcd')
         self.assertEqual(data['char_arr_2d'], expected)
         self.assertEqual(data['char_arr_3d'], [['abcd', 'defg'], ['ghij', 'jklm'], ['mnöp', 'pqrs']])
+
+    def test_affine2d_loading(self):
+        """Test loading of MATLAB affine2d objects from MCOS-encoded HDF5"""
+        d = mat73.loadmat(self.testfile_affine2d)
+
+        theta = np.pi / 4
+
+        # identity: affine2d() → T = eye(3)
+        self.assertIn('aff_identity', d)
+        np.testing.assert_allclose(d['aff_identity']['T'], np.eye(3))
+
+        # translation: affine2d([1 0 0; 0 1 0; 10 20 1])
+        self.assertIn('aff_translation', d)
+        expected_translation = np.array([[1., 0., 0.],
+                                          [0., 1., 0.],
+                                          [10., 20., 1.]])
+        np.testing.assert_allclose(d['aff_translation']['T'], expected_translation)
+
+        # scaling: affine2d([2 0 0; 0 3 0; 0 0 1])
+        self.assertIn('aff_scaling', d)
+        expected_scaling = np.array([[2., 0., 0.],
+                                      [0., 3., 0.],
+                                      [0., 0., 1.]])
+        np.testing.assert_allclose(d['aff_scaling']['T'], expected_scaling)
+
+        # rotation by pi/4
+        self.assertIn('aff_rotation', d)
+        c, s = np.cos(theta), np.sin(theta)
+        expected_rotation = np.array([[c,  s, 0.],
+                                       [-s, c, 0.],
+                                       [0., 0., 1.]])
+        np.testing.assert_allclose(d['aff_rotation']['T'], expected_rotation, atol=1e-10)
+
+        # combined: rotation*2 + translation [5, 10]
+        self.assertIn('aff_combined', d)
+        expected_combined = np.array([[2*c,  2*s, 0.],
+                                       [-2*s, 2*c, 0.],
+                                       [5.,   10., 1.]])
+        np.testing.assert_allclose(d['aff_combined']['T'], expected_combined, atol=1e-10)
+
+        # shear: affine2d([1 0.5 0; 0 1 0; 0 0 1])
+        self.assertIn('aff_shear', d)
+        expected_shear = np.array([[1.,  0.5, 0.],
+                                    [0.,  1.,  0.],
+                                    [0.,  0.,  1.]])
+        np.testing.assert_allclose(d['aff_shear']['T'], expected_shear)
+
+        # struct with affine2d fields
+        self.assertIn('aff_struct', d)
+        aff_struct = d['aff_struct']
+        self.assertIn('identity', aff_struct)
+        np.testing.assert_allclose(aff_struct['identity']['T'], np.eye(3))
+        self.assertIn('translation', aff_struct)
+        expected_struct_trans = np.array([[1., 0., 0.],
+                                           [0., 1., 0.],
+                                           [3., 4., 1.]])
+        np.testing.assert_allclose(aff_struct['translation']['T'], expected_struct_trans)
+
+        # cell array of affine2d
+        self.assertIn('aff_cell', d)
+        aff_cell = d['aff_cell']
+        self.assertIsInstance(aff_cell, list)
+        self.assertEqual(len(aff_cell), 2)
+        np.testing.assert_allclose(aff_cell[0]['T'], np.eye(3))
+        expected_cell_trans = np.array([[1., 0., 0.],
+                                         [0., 1., 0.],
+                                         [5., 6., 1.]])
+        np.testing.assert_allclose(aff_cell[1]['T'], expected_cell_trans)
 
 if __name__ == '__main__':
 

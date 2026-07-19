@@ -82,3 +82,34 @@ char_arr_3d = cat(3, ...
 
 save('testfile16.mat','char_arr_1d', 'char_arr_2d', 'char_arr_3d', '-v7.3')
 clear all
+
+%% file to test affine2d loading
+% Identity transform (no transformation)
+aff_identity = affine2d();
+
+% Pure translation: shift by (10, 20)
+aff_translation = affine2d([1 0 0; 0 1 0; 10 20 1]);
+
+% Pure scaling: scale x by 2, y by 3
+aff_scaling = affine2d([2 0 0; 0 3 0; 0 0 1]);
+
+% Pure rotation by 45 degrees (pi/4)
+theta = pi/4;
+aff_rotation = affine2d([cos(theta) sin(theta) 0; -sin(theta) cos(theta) 0; 0 0 1]);
+
+% Combined: rotation + translation + scaling
+aff_combined = affine2d([2*cos(theta) 2*sin(theta) 0; -2*sin(theta) 2*cos(theta) 0; 5 10 1]);
+
+% Shear transform
+aff_shear = affine2d([1 0.5 0; 0 1 0; 0 0 1]);
+
+% Struct containing affine2d fields
+aff_struct.identity = affine2d();
+aff_struct.translation = affine2d([1 0 0; 0 1 0; 3 4 1]);
+
+% Cell array with affine2d values
+aff_cell = {affine2d(), affine2d([1 0 0; 0 1 0; 5 6 1])};
+
+save('testfile_affine2d.mat', 'aff_identity', 'aff_translation', 'aff_scaling', ...
+     'aff_rotation', 'aff_combined', 'aff_shear', 'aff_struct', 'aff_cell', '-v7.3')
+clear all
