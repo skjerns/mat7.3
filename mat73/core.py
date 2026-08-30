@@ -12,6 +12,7 @@ import h5py
 import logging
 from typing import Iterable
 from mat73.version import __version__
+from mat73.mcos import MCOSSubsystem, is_mcos_header
 
 logger = logging.getLogger('mat73')
 
@@ -61,6 +62,8 @@ class HDF5Decoder():
         self._dict_class = AttrDict if use_attrdict else dict
         self.refs = {} # this is used in case of matlab matrices
         self.only_include = only_include
+        self._mcos = None  # parsed lazily, first time an MCOS object shows up
+        self._mcos_unconverted = set()  # classes already warned about
 
         # set a check if requested include_only var was actually found
         if only_include is not None:
@@ -224,6 +227,11 @@ class HDF5Decoder():
                 logger.error(message)
             return None
 
+        # objects of classdef classes (table, datetime, affine2d, user
+        # classes, ...) are stored as MCOS headers pointing into #subsystem#
+        if is_mcos_header(dataset):
+            return self.convert_mcos(dataset, depth)
+
         known_cls = ['cell', 'char', 'bool', 'logical', 'double', 'single',
                      'int8', 'int16', 'int32', 'int64', 'uint8', 'uint16',
                      'uint32', 'uint64']
@@ -303,38 +311,6 @@ class HDF5Decoder():
         elif mtype=='canonical empty':
             return None
 
-        elif mtype=='affine2d':
-            if 'MATLAB_object_decode' not in dataset.attrs or \
-               dataset.attrs['MATLAB_object_decode'] != 3:
-                if self.verbose:
-                    logger.error(f'Unsupported affine2d encoding: {dataset.name}')
-                return None
-            file_handle = dataset.file
-            if '#subsystem#' not in file_handle or \
-               'MCOS' not in file_handle['#subsystem#']:
-                if self.verbose:
-                    logger.error(f'No MCOS subsystem found for affine2d: {dataset.name}')
-                return None
-            mcos_refs = file_handle['#subsystem#/MCOS'][0]
-            raw_data = np.array(dataset)
-            if raw_data.ndim != 2 or raw_data.shape[1] < 5:
-                if self.verbose:
-                    logger.error(f'Unexpected affine2d data shape: {raw_data.shape}')
-                return None
-            mcos_idx = int(raw_data[0, 4]) + 1
-            if mcos_idx < 0 or mcos_idx >= len(mcos_refs):
-                if self.verbose:
-                    logger.error(f'affine2d MCOS index {mcos_idx} out of range')
-                return None
-            mcos_obj = file_handle[mcos_refs[mcos_idx]]
-            if not isinstance(mcos_obj, h5py.Group) or \
-               'TransformationMatrix' not in mcos_obj:
-                if self.verbose:
-                    logger.error(f'No TransformationMatrix in MCOS object for affine2d')
-                return None
-            T_stored = np.array(mcos_obj['TransformationMatrix'])
-            return {'T': T_stored.T}
-
         # complex numbers need to be filtered out separately
         elif 'imag' in str(dataset.dtype):
             if dataset.attrs['MATLAB_class']==b'single':
@@ -358,6 +334,119 @@ class HDF5Decoder():
                           '{}, ({})'.format(mtype, dataset.dtype)
                 logger.error(message)
             return None
+
+
+    # -- MCOS objects ------------------------------------------------------
+
+    def _mcos_subsystem(self, dataset):
+        if self._mcos is None:
+            hdf5 = dataset.file
+            if not MCOSSubsystem.present(hdf5):
+                return None
+            self._mcos = MCOSSubsystem(hdf5)
+        return self._mcos
+
+    def convert_mcos(self, dataset, depth):
+        """
+        Convert an MCOS object header (see mat73/mcos.py) into Python.
+
+        Classes with a converter in MCOS_CONVERTERS come back in a natural
+        shape (a table as a dict of columns, an affine2d as {'T': matrix}).
+        Any other class comes back as a dict of its saved properties, which
+        is also the starting point for adding a converter for it.
+        Object arrays follow the cell-array conventions of this reader.
+        """
+        subsystem = self._mcos_subsystem(dataset)
+        if subsystem is None:
+            if self.verbose:
+                logger.error(f'MCOS object {dataset.name} but the file has '
+                             'no #subsystem#/MCOS group')
+            return None
+        try:
+            header = subsystem.read_header(dataset)
+        except ValueError as e:
+            if self.verbose:
+                logger.error(f'Cannot read MCOS header {dataset.name}: {e}')
+            return None
+
+        class_name = subsystem.class_name(header.class_id)
+        objects = [self._convert_mcos_object(subsystem, oid, class_name, depth)
+                   for oid in header.object_ids]
+
+        if not objects:
+            return []
+        if all(d == 1 for d in header.dims):
+            return objects[0]
+        arr = np.empty(len(objects), dtype=object)
+        for i, obj in enumerate(objects):
+            arr[i] = obj
+        nested = arr.reshape(header.dims, order='F').tolist()
+        if len(nested) == 1:
+            nested = nested[0]
+        return nested
+
+    def _convert_mcos_object(self, subsystem, object_id, class_name, depth):
+        def convert(value):
+            # force=True: property values live under #refs#, which is never
+            # part of an only_include path
+            return self.unpack_mat(value, depth + 1, force=True)
+
+        props = subsystem.properties(object_id, convert=convert)
+        converter = MCOS_CONVERTERS.get(class_name)
+        if converter is None:
+            if self.verbose and class_name not in self._mcos_unconverted:
+                self._mcos_unconverted.add(class_name)
+                logger.warning(f"MCOS class '{class_name}' has no converter "
+                               "yet; returning its saved properties as a "
+                               "dict. Contributions welcome: "
+                               "https://github.com/skjerns/mat7.3")
+            return self._dict_class(props)
+        result = converter(props)
+        if isinstance(result, dict) and not isinstance(result, self._dict_class):
+            result = self._dict_class(result)  # honour use_attrdict
+        return result
+
+
+def _convert_table(props):
+    """MATLAB table -> dict of column name -> column data, in table order.
+
+    Saved properties: data (one entry per column), varnames, nrows, ndims,
+    nvars, rownames, props. RowNames and per-table Properties are not
+    returned; column contents follow the normal conversion rules of this
+    reader, so a column of datetimes is a list of datetimes and so on.
+    """
+    names = props.get('varnames')
+    columns = props.get('data')
+    if not isinstance(names, list):
+        names = [] if names is None else [names]
+    if not isinstance(columns, list):
+        columns = [] if columns is None else [columns]
+    if len(names) != len(columns):
+        logger.error(f'table has {len(names)} column names but '
+                     f'{len(columns)} columns; using positional names')
+        names = [f'Var{i + 1}' for i in range(len(columns))]
+    return dict(zip(names, columns))
+
+
+def _convert_affine2d(props):
+    """affine2d saves itself through saveobj as a struct with one field."""
+    payload = props.get('any')
+    if isinstance(payload, dict) and 'TransformationMatrix' in payload:
+        return {'T': payload['TransformationMatrix']}
+    logger.error('affine2d object without a TransformationMatrix')
+    return None
+
+
+def _convert_missing(props):
+    """MATLAB's `missing` is an MCOS object with no properties."""
+    return None
+
+
+MCOS_CONVERTERS = {
+    'table': _convert_table,
+    'affine2d': _convert_affine2d,
+    'missing': _convert_missing,
+}
 
 
 def squeeze(arr):

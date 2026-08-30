@@ -73,12 +73,35 @@ The following MATLAB datatypes can be loaded
 | canonical empty          | []                |
 | missing                  | None              |
 | sparse                   | scipy.sparse.csc  |
-| Other (ie Datetime, ...) | Not supported     |
+| table                    | dict of columns   |
+| affine2d                 | {'T': np.ndarray} |
+| other classdef objects   | dict of saved properties (see below) |
+
+## MATLAB objects (table, datetime, user classes, ...)
+
+Instances of classdef classes are stored through MCOS, MATLAB's undocumented
+object system: the variable is a small `uint32` header that points into a
+hidden `#subsystem#` group. `mat73/mcos.py` decodes that subsystem once per
+file and hands every object's saved properties to a converter:
+
+- `table` loads as a dict of column name to column data, in table order
+  (`pandas.DataFrame(data_dict['my_table'])` if you want a DataFrame)
+- `affine2d` loads as `{'T': transformation_matrix}`
+- any class without a converter loads as a dict of its saved properties (a
+  warning tells you which class), which is also everything you need to write
+  a converter for it: add an entry to `MCOS_CONVERTERS` in `mat73/core.py`
+
+Format notes: [mat73-reader FORMAT.md](https://github.com/WilliamGarrow/mat73-reader/blob/main/FORMAT.md)
+and the module docstring of `mat73/mcos.py`. The layout was reverse engineered
+independently by [matio](https://github.com/foreverallama/matio),
+[MAT.jl](https://github.com/JuliaIO/MAT.jl) and
+[MatFileHandler](https://github.com/mahalex/MatFileHandler) as well; the
+agreement between them is the best evidence it is right.
 
 ## Short-comings
 
 - This library will __only__ load mat 7.3 files. For older versions use `scipy.io.loadmat`
-- Proprietary MATLAB types (e.g `datetime`, `duriation`, etc) are not supported. If someone tells me how to convert them, I'll implement that
+- Proprietary MATLAB types without a converter (e.g `datetime`, `duration`, `string`, `categorical`) load as a dict of their saved properties rather than as a native Python value. Converters are welcome, see above
 - For now, you can't save anything back to the .mat. It's a bit more difficult than expected, so it's not on the roadmap for now
 - See also [hdf5storage](https://github.com/frejanordsiek/hdf5storage), which can indeed be used for saving .mat, but has less features for loading
 - See also [pymatreader](https://gitlab.com/obob/pymatreader/) which has a (maybe even better) implementation of loading MAT files, even for older ones

@@ -7,6 +7,8 @@ Created on Fri Apr 17 18:03:26 2020
 import os
 import numpy as np
 import mat73
+import h5py
+from mat73.mcos import MCOSSubsystem, is_mcos_header
 import unittest
 import time
 try:
@@ -50,6 +52,11 @@ class Testing(unittest.TestCase):
         if not os.path.exists(file_affine2d):
             file_affine2d = os.path.join('./tests', file_affine2d)
         self.testfile_affine2d = file_affine2d
+
+        file_table = 'testfile_table.mat'
+        if not os.path.exists(file_table):
+            file_table = os.path.join('./tests', file_table)
+        self.testfile_table = file_table
 
     def test_file_obj_loading(self):
         """test for loading as file object and string filename """
@@ -597,6 +604,78 @@ class Testing(unittest.TestCase):
                                          [0., 1., 0.],
                                          [5., 6., 1.]])
         np.testing.assert_allclose(aff_cell[1]['T'], expected_cell_trans)
+
+
+    def test_mcos_subsystem_metadata(self):
+        """The central MCOS layer decodes #subsystem#/MCOS of a MATLAB file"""
+        with h5py.File(self.testfile_affine2d, 'r') as f:
+            sub = MCOSSubsystem(f)
+            assert sub.version == 4
+            assert sub.n_classes == 1
+            assert sub.class_name(1) == 'affine2d'
+            assert sub.n_objects == 10
+
+            assert is_mcos_header(f['aff_translation'])
+            assert not is_mcos_header(f['aff_cell'])
+            header = sub.read_header(f['aff_translation'])
+            assert header.dims == (1, 1)
+            assert header.class_id == 1
+            assert len(header.object_ids) == 1
+
+            # saveobj-type objects expose one property, 'any', holding the
+            # struct saveobj returned
+            props = sub.properties(header.object_ids[0])
+            assert list(props) == ['any']
+            assert isinstance(props['any'], h5py.Group)
+            assert 'TransformationMatrix' in props['any']
+
+            # every object in the file is an affine2d with that shape
+            for object_id in range(1, sub.n_objects + 1):
+                assert sub.class_name(sub.class_of(object_id)) == 'affine2d'
+                assert 'TransformationMatrix' in sub.properties(object_id)['any']
+
+    def test_is_mcos_header_rejects_plain_uint32(self):
+        with h5py.File(self.testfile1, 'r') as f:
+            assert f['data/uint32_'].dtype == np.uint32
+            assert not is_mcos_header(f['data/uint32_'])
+
+    def test_table_loading(self):
+        """Test loading of MATLAB table objects (MCOS) into dicts of columns"""
+        def flat(column):
+            # cellstr columns follow the cell conventions of this reader
+            return [x[0] if isinstance(x, list) else x for x in column]
+
+        d = mat73.loadmat(self.testfile_table)
+
+        t = d['tbl_numeric']
+        assert list(t) == ['id', 'value']
+        np.testing.assert_array_equal(t['id'], [1, 2, 3])
+        np.testing.assert_array_equal(t['value'], [1.5, 2.5, 3.5])
+
+        t = d['tbl_mixed']
+        assert list(t) == ['n', 'name', 'flag']
+        np.testing.assert_array_equal(t['n'], [10, 20, 30])
+        assert flat(t['name']) == ['alpha', 'beta', 'gamma']
+        np.testing.assert_array_equal(t['flag'], [True, False, True])
+        assert t['flag'].dtype == bool
+
+        assert list(d['tbl_single']) == ['x']
+        assert d['tbl_single']['x'] == 42
+
+        inner = d['tbl_struct']['inner']
+        np.testing.assert_array_equal(inner['a'], [1, 2])
+        np.testing.assert_array_equal(inner['b'], [3, 4])
+
+        cell = d['tbl_cell']
+        assert len(cell) == 2
+        np.testing.assert_array_equal(cell[0]['c'], [5, 6])
+        np.testing.assert_array_equal(cell[1]['d'], [7, 8, 9])
+
+    def test_table_loading_attrdict(self):
+        d = mat73.loadmat(self.testfile_table, use_attrdict=True)
+        np.testing.assert_array_equal(d.tbl_numeric.id, [1, 2, 3])
+        np.testing.assert_array_equal(d.tbl_struct.inner.b, [3, 4])
+
 
 if __name__ == '__main__':
 
