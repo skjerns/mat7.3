@@ -113,3 +113,15 @@ aff_cell = {affine2d(), affine2d([1 0 0; 0 1 0; 5 6 1])};
 save('testfile_affine2d.mat', 'aff_identity', 'aff_translation', 'aff_scaling', ...
      'aff_rotation', 'aff_combined', 'aff_shear', 'aff_struct', 'aff_cell', '-v7.3')
 clear all
+
+%% file to test table loading (MCOS objects, see mat73/mcos.py)
+tbl_numeric = table([1;2;3], [1.5;2.5;3.5], 'VariableNames', {'id', 'value'});
+tbl_mixed = table([10;20;30], {'alpha';'beta';'gamma'}, [true;false;true], ...
+                  'VariableNames', {'n', 'name', 'flag'});
+tbl_single = table(42, 'VariableNames', {'x'});
+tbl_struct.inner = table([1;2], [3;4], 'VariableNames', {'a', 'b'});
+tbl_cell = {table([5;6], 'VariableNames', {'c'}), table([7;8;9], 'VariableNames', {'d'})};
+save('testfile_table.mat', 'tbl_numeric', 'tbl_mixed', 'tbl_single', ...
+     'tbl_struct', 'tbl_cell', '-v7.3')
+clear all
+
