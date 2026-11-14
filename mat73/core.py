@@ -72,11 +72,13 @@ class HDF5Decoder():
         # because we load everything
         if self.only_include is None:
             return True
-        # see if the current name is in any of the included variables
+        # Match complete paths, their descendants, or ancestors to traverse.
+        name = hdf5.name
         for s in self.only_include:
-            if s in hdf5.name:
+            if name == s or name.startswith(s + '/'):
                 self._found_include_var[s] = True
-            if s in hdf5.name or hdf5.name in s:
+                return True
+            if s.startswith(name + '/'):
                 return True
         return False
 
@@ -382,7 +384,9 @@ def loadmat(file, use_attrdict=False, only_include=None, verbose=True):
                          e.g. keys(), pop(), ...
                          these will still be available by struct['keys']
     :param verbose: print warnings
-    :param only_include: A list of HDF5 paths that should be loaded.
+    :param only_include: An HDF5 path or list of paths that should be loaded.
+                         Paths match complete variable and field names,
+                         not substrings.
                          this can greatly reduce loading times. If a path
                          contains further sub datasets, these will be loaded
                          as well, e.g. 'struct/' will load all subvars of
